@@ -40,6 +40,7 @@ const KEY_MAPPINGS: Record<string, keyof typeof GBA_BUTTONS> = {
 
 export default function GBAEmulator() {
   const screenWrapperRef = useRef<HTMLDivElement>(null);
+  const canvasRef = useRef<HTMLCanvasElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [emulatorRunning, setEmulatorRunning] = useState(false);
   const [nostalgist, setNostalgist] = useState<any>(null);
