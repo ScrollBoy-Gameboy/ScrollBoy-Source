@@ -40,7 +40,6 @@ const KEY_MAPPINGS: Record<string, keyof typeof GBA_BUTTONS> = {
 
 export default function GBAEmulator() {
   const screenWrapperRef = useRef<HTMLDivElement>(null);
-  const canvasRef = useRef<HTMLCanvasElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [emulatorRunning, setEmulatorRunning] = useState(false);
   const [nostalgist, setNostalgist] = useState<any>(null);
@@ -163,16 +162,22 @@ export default function GBAEmulator() {
         throw new Error("Screen wrapper not found");
       }
 
-      // Clear any existing canvas elements (from previous emulator instances)
+      // Clear any existing canvas elements
       const existingCanvases = wrapper.querySelectorAll("canvas");
       existingCanvases.forEach((c) => c.remove());
+
+      // Create a new canvas element and append it to the wrapper
+      const canvas = document.createElement("canvas");
+      canvas.id = "emulator-canvas";
+      wrapper.appendChild(canvas);
 
       const romArrayBuffer = await file.arrayBuffer();
       const romBlob = new Blob([romArrayBuffer]);
 
-      // Launch nostalgist with the wrapper element – Nostalgist will create its own canvas inside
+      // Launch nostalgist with the canvas element directly
+      // Uses default CDN-hosted cores for reliability
       const instance = await Nostalgist.launch({
-        element: wrapper,
+        element: canvas,
         core: "mgba",
         rom: romBlob,
         runEmulatorManually: false,
@@ -295,8 +300,8 @@ export default function GBAEmulator() {
           {/* Power indicator dot */}
           <div
             className={`absolute top-[20px] right-[-8px] w-[6px] h-[6px] rounded-full transition-all ${emulatorRunning
-              ? "bg-[#ff0000] shadow-[0_0_6px_#ff0000]"
-              : "bg-[#4a0000]"
+                ? "bg-[#ff0000] shadow-[0_0_6px_#ff0000]"
+                : "bg-[#4a0000]"
               }`}
           />
         </div>
