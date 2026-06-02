@@ -1,0 +1,556 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MGBA Advance Emulator</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      background-color: #2a2a2a;
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      overflow: hidden;
+      user-select: none;
+    }
+
+    .gba-container {
+      position: relative;
+      width: 850px;
+      height: 500px;
+    }
+
+    .gba-body {
+      position: relative;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(145deg, #5a4a8a 0%, #4a3a7a 50%, #3a2a6a 100%);
+      border-radius: 30px 30px 180px 180px / 30px 30px 80px 80px;
+      box-shadow: 
+        0 10px 30px rgba(0, 0, 0, 0.5),
+        inset 0 2px 10px rgba(255, 255, 255, 0.1),
+        inset 0 -5px 20px rgba(0, 0, 0, 0.3);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding-top: 30px;
+    }
+
+    /* Left wing extension */
+    .gba-body::before {
+      content: '';
+      position: absolute;
+      left: -60px;
+      top: 50%;
+      width: 100px;
+      height: 280px;
+      background: linear-gradient(145deg, #5a4a8a 0%, #4a3a7a 50%, #3a2a6a 100%);
+      border-radius: 50px 0 0 50px;
+      transform: translateY(-50%);
+      z-index: -1;
+      box-shadow: 
+        -5px 5px 15px rgba(0, 0, 0, 0.4),
+        inset 2px 0 5px rgba(255, 255, 255, 0.1);
+    }
+
+    /* Right wing extension */
+    .gba-body::after {
+      content: '';
+      position: absolute;
+      right: -60px;
+      top: 50%;
+      width: 100px;
+      height: 280px;
+      background: linear-gradient(145deg, #5a4a8a 0%, #4a3a7a 50%, #3a2a6a 100%);
+      border-radius: 0 50px 50px 0;
+      transform: translateY(-50%);
+      z-index: -1;
+      box-shadow: 
+        5px 5px 15px rgba(0, 0, 0, 0.4),
+        inset -2px 0 5px rgba(255, 255, 255, 0.1);
+    }
+
+    .screen-bezel {
+      position: relative;
+      width: 420px;
+      height: 280px;
+      background: linear-gradient(180deg, #2a2a4a 0%, #1a1a2a 100%);
+      border-radius: 15px;
+      padding: 15px;
+      box-shadow: 
+        inset 0 3px 15px rgba(0, 0, 0, 0.8),
+        0 2px 5px rgba(255, 255, 255, 0.1);
+    }
+
+    .screen-inner {
+      position: relative;
+      width: 100%;
+      height: 100%;
+      background: #1a1a1a;
+      border-radius: 5px;
+      overflow: hidden;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+
+    #emulator-canvas {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+      image-rendering: pixelated;
+      display: none;
+    }
+
+    .screen-off-text {
+      color: #333;
+      font-size: 14px;
+      text-align: center;
+    }
+
+    .power-indicator {
+      position: absolute;
+      top: 20px;
+      right: 30px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      z-index: 10;
+    }
+
+    .power-led {
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      background: #1a3a1a;
+      transition: all 0.3s ease;
+    }
+
+    .power-led.on {
+      background: #00ff00;
+      box-shadow: 0 0 10px #00ff00, 0 0 20px #00ff00;
+    }
+
+    .power-label {
+      color: #1a1a3a;
+      font-size: 12px;
+      font-weight: bold;
+      letter-spacing: 1px;
+    }
+
+    /* D-Pad */
+    .dpad-container {
+      position: absolute;
+      left: 40px;
+      top: 50%;
+      transform: translateY(-50%);
+      width: 120px;
+      height: 120px;
+    }
+
+    .dpad {
+      position: relative;
+      width: 100%;
+      height: 100%;
+    }
+
+    .dpad-center {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: 40px;
+      height: 40px;
+      background: #3a3a5a;
+      border-radius: 5px;
+      z-index: 2;
+    }
+
+    .dpad-btn {
+      position: absolute;
+      background: linear-gradient(145deg, #4a4a6a 0%, #3a3a5a 100%);
+      cursor: pointer;
+      transition: all 0.1s ease;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      border: none;
+    }
+
+    .dpad-btn:hover {
+      filter: brightness(1.1);
+    }
+
+    .dpad-btn:active, .dpad-btn.pressed {
+      filter: brightness(0.8);
+      transform: scale(0.95);
+    }
+
+    .dpad-up {
+      top: 0;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 40px;
+      height: 40px;
+      border-radius: 8px 8px 0 0;
+    }
+
+    .dpad-down {
+      bottom: 0;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 40px;
+      height: 40px;
+      border-radius: 0 0 8px 8px;
+    }
+
+    .dpad-left {
+      left: 0;
+      top: 50%;
+      transform: translateY(-50%);
+      width: 40px;
+      height: 40px;
+      border-radius: 8px 0 0 8px;
+    }
+
+    .dpad-right {
+      right: 0;
+      top: 50%;
+      transform: translateY(-50%);
+      width: 40px;
+      height: 40px;
+      border-radius: 0 8px 8px 0;
+    }
+
+    .dpad-arrow {
+      width: 0;
+      height: 0;
+      border: 8px solid transparent;
+    }
+
+    .dpad-up .dpad-arrow {
+      border-bottom-color: #2a2a4a;
+      border-top: none;
+    }
+
+    .dpad-down .dpad-arrow {
+      border-top-color: #2a2a4a;
+      border-bottom: none;
+    }
+
+    .dpad-left .dpad-arrow {
+      border-right-color: #2a2a4a;
+      border-left: none;
+    }
+
+    .dpad-right .dpad-arrow {
+      border-left-color: #2a2a4a;
+      border-right: none;
+    }
+
+    /* A/B Buttons */
+    .ab-buttons {
+      position: absolute;
+      right: 40px;
+      top: 45%;
+      transform: translateY(-50%);
+      display: flex;
+      gap: 15px;
+    }
+
+    .action-btn {
+      width: 50px;
+      height: 50px;
+      border-radius: 50%;
+      background: linear-gradient(145deg, #c8c8d8 0%, #a8a8b8 100%);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      font-size: 18px;
+      font-weight: bold;
+      color: #4a4a6a;
+      cursor: pointer;
+      box-shadow: 
+        0 4px 8px rgba(0, 0, 0, 0.3),
+        inset 0 2px 4px rgba(255, 255, 255, 0.5);
+      transition: all 0.1s ease;
+      border: none;
+    }
+
+    .action-btn:hover {
+      filter: brightness(1.05);
+    }
+
+    .action-btn:active, .action-btn.pressed {
+      transform: scale(0.95);
+      box-shadow: 
+        0 2px 4px rgba(0, 0, 0, 0.3),
+        inset 0 2px 4px rgba(0, 0, 0, 0.2);
+    }
+
+    .btn-b {
+      margin-top: 30px;
+    }
+
+    /* Start/Select Buttons */
+    .start-select-container {
+      position: absolute;
+      left: 100px;
+      bottom: 80px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .system-btn-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .system-btn-label {
+      color: #3a3a5a;
+      font-size: 10px;
+      font-weight: bold;
+      letter-spacing: 1px;
+      width: 50px;
+    }
+
+    .system-btn {
+      width: 45px;
+      height: 14px;
+      background: linear-gradient(145deg, #7a7a9a 0%, #5a5a7a 100%);
+      border-radius: 7px;
+      cursor: pointer;
+      box-shadow: 
+        0 2px 4px rgba(0, 0, 0, 0.3),
+        inset 0 1px 2px rgba(255, 255, 255, 0.3);
+      transition: all 0.1s ease;
+      border: none;
+    }
+
+    .system-btn:hover {
+      filter: brightness(1.1);
+    }
+
+    .system-btn:active, .system-btn.pressed {
+      transform: scale(0.95);
+      filter: brightness(0.9);
+    }
+
+    /* Speaker Grille */
+    .speaker-grille {
+      position: absolute;
+      right: 80px;
+      bottom: 70px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .speaker-line {
+      width: 60px;
+      height: 3px;
+      background: #3a3a5a;
+      border-radius: 2px;
+    }
+
+    /* Branding */
+    .branding {
+      position: absolute;
+      bottom: 35px;
+      left: 50%;
+      transform: translateX(-50%);
+      display: flex;
+      gap: 20px;
+      align-items: baseline;
+    }
+
+    .brand-mgba {
+      color: #2a2a4a;
+      font-size: 22px;
+      font-weight: bold;
+      font-style: italic;
+      letter-spacing: 2px;
+    }
+
+    .brand-advance {
+      color: #2a2a4a;
+      font-size: 16px;
+      font-weight: bold;
+      letter-spacing: 4px;
+    }
+
+    /* Load ROM Button */
+    .load-rom-btn {
+      position: absolute;
+      top: 10px;
+      left: 50%;
+      transform: translateX(-50%);
+      padding: 8px 20px;
+      background: linear-gradient(145deg, #6a5a9a 0%, #5a4a8a 100%);
+      border: none;
+      border-radius: 5px;
+      color: white;
+      font-size: 12px;
+      font-weight: bold;
+      cursor: pointer;
+      box-shadow: 0 3px 6px rgba(0, 0, 0, 0.3);
+      transition: all 0.2s ease;
+      z-index: 100;
+    }
+
+    .load-rom-btn:hover {
+      filter: brightness(1.1);
+      transform: translateX(-50%) translateY(-2px);
+    }
+
+    .load-rom-btn:active {
+      transform: translateX(-50%) translateY(0);
+    }
+
+    /* Shoulder Buttons */
+    .shoulder-btn {
+      position: absolute;
+      top: 5px;
+      width: 80px;
+      height: 25px;
+      background: linear-gradient(180deg, #4a3a7a 0%, #3a2a6a 100%);
+      border-radius: 5px 5px 0 0;
+      cursor: pointer;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      color: #6a6a8a;
+      font-size: 12px;
+      font-weight: bold;
+      box-shadow: 
+        0 -3px 6px rgba(0, 0, 0, 0.3),
+        inset 0 2px 4px rgba(255, 255, 255, 0.1);
+      transition: all 0.1s ease;
+      border: none;
+    }
+
+    .shoulder-btn:hover {
+      filter: brightness(1.1);
+    }
+
+    .shoulder-btn:active, .shoulder-btn.pressed {
+      transform: translateY(2px);
+      filter: brightness(0.9);
+    }
+
+    .shoulder-l {
+      left: 80px;
+    }
+
+    .shoulder-r {
+      right: 80px;
+    }
+
+    /* Instructions */
+    .instructions {
+      position: fixed;
+      bottom: 10px;
+      left: 50%;
+      transform: translateX(-50%);
+      color: #666;
+      font-size: 11px;
+      text-align: center;
+    }
+  </style>
+</head>
+<body>
+  <button class="load-rom-btn" id="load-rom">Load ROM</button>
+  
+  <div class="gba-container">
+    <div class="gba-body">
+      <!-- Shoulder Buttons -->
+      <button class="shoulder-btn shoulder-l" id="btn-l">L</button>
+      <button class="shoulder-btn shoulder-r" id="btn-r">R</button>
+      
+      <!-- Power Indicator -->
+      <div class="power-indicator">
+        <div class="power-led" id="power-led"></div>
+        <span class="power-label">POWER</span>
+      </div>
+      
+      <!-- Screen -->
+      <div class="screen-bezel">
+        <div class="screen-inner">
+          <canvas id="emulator-canvas"></canvas>
+          <div class="screen-off-text" id="screen-off-text">
+            Load a ROM to start
+          </div>
+        </div>
+      </div>
+      
+      <!-- D-Pad -->
+      <div class="dpad-container">
+        <div class="dpad">
+          <div class="dpad-center"></div>
+          <button class="dpad-btn dpad-up" id="btn-up">
+            <div class="dpad-arrow"></div>
+          </button>
+          <button class="dpad-btn dpad-down" id="btn-down">
+            <div class="dpad-arrow"></div>
+          </button>
+          <button class="dpad-btn dpad-left" id="btn-left">
+            <div class="dpad-arrow"></div>
+          </button>
+          <button class="dpad-btn dpad-right" id="btn-right">
+            <div class="dpad-arrow"></div>
+          </button>
+        </div>
+      </div>
+      
+      <!-- A/B Buttons -->
+      <div class="ab-buttons">
+        <button class="action-btn btn-b" id="btn-b">B</button>
+        <button class="action-btn btn-a" id="btn-a">A</button>
+      </div>
+      
+      <!-- Start/Select -->
+      <div class="start-select-container">
+        <div class="system-btn-row">
+          <span class="system-btn-label">START</span>
+          <button class="system-btn" id="btn-start"></button>
+        </div>
+        <div class="system-btn-row">
+          <span class="system-btn-label">SELECT</span>
+          <button class="system-btn" id="btn-select"></button>
+        </div>
+      </div>
+      
+      <!-- Speaker Grille -->
+      <div class="speaker-grille">
+        <div class="speaker-line"></div>
+        <div class="speaker-line"></div>
+        <div class="speaker-line"></div>
+        <div class="speaker-line"></div>
+        <div class="speaker-line"></div>
+      </div>
+      
+      <!-- Branding -->
+      <div class="branding">
+        <span class="brand-mgba">MGBA</span>
+        <span class="brand-advance">ADVANCE</span>
+      </div>
+    </div>
+  </div>
+  
+  <div class="instructions">
+    Keyboard: Arrow Keys = D-Pad | Z = A | X = B | Enter = Start | Shift = Select | A = L | S = R
+  </div>
+
+  <script src="./renderer.js"></script>
+</body>
+</html>
