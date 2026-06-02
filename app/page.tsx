@@ -39,7 +39,6 @@ const KEY_MAPPINGS: Record<string, keyof typeof GBA_BUTTONS> = {
 };
 
 export default function GBAEmulator() {
-  const canvasRef = useRef<HTMLCanvasElement>(null);
   const screenWrapperRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [emulatorRunning, setEmulatorRunning] = useState(false);
@@ -78,36 +77,45 @@ export default function GBAEmulator() {
     [nostalgist]
   );
 
-  // Lock the Nostalgist-managed canvas to our screen wrapper dimensions
-  // and apply the Game Boy green filter once the emulator is running.
+  // Contain and style the Nostalgist-created canvas within our wrapper
+  // Applies sizing constraints and the Game Boy green filter
   useEffect(() => {
     if (!emulatorRunning) return;
 
-    const canvas = canvasRef.current;
     const wrapper = screenWrapperRef.current;
-    if (!canvas || !wrapper) return;
+    if (!wrapper) return;
 
-    // Apply monochrome → green palette filter
-    canvas.style.filter = GB_SCREEN_FILTER;
+    // Find the canvas that Nostalgist created inside the wrapper
+    const findAndStyleCanvas = () => {
+      const canvas = wrapper.querySelector("canvas");
+      if (!canvas) return;
 
-    // Force the canvas to fill the wrapper exactly
-    const enforceSize = () => {
-      const { width, height } = wrapper.getBoundingClientRect();
-      if (width > 0 && height > 0) {
-        canvas.style.width = `${width}px`;
-        canvas.style.height = `${height}px`;
-        canvas.style.position = "absolute";
-        canvas.style.top = "0";
-        canvas.style.left = "0";
-        canvas.style.display = "block";
-      }
+      // Apply monochrome → green palette filter
+      canvas.style.filter = GB_SCREEN_FILTER;
+      canvas.style.position = "absolute";
+      canvas.style.top = "0";
+      canvas.style.left = "0";
+      canvas.style.width = "100%";
+      canvas.style.height = "100%";
+      canvas.style.objectFit = "contain";
+      canvas.style.imageRendering = "pixelated";
     };
 
-    enforceSize();
-    const ro = new ResizeObserver(enforceSize);
+    // Initial style application
+    findAndStyleCanvas();
+
+    // Watch for canvas being added/modified
+    const observer = new MutationObserver(findAndStyleCanvas);
+    observer.observe(wrapper, { childList: true, subtree: true });
+
+    // Also enforce on resize
+    const ro = new ResizeObserver(findAndStyleCanvas);
     ro.observe(wrapper);
 
-    return () => ro.disconnect();
+    return () => {
+      observer.disconnect();
+      ro.disconnect();
+    };
   }, [emulatorRunning]);
 
   // Keyboard event handlers
@@ -149,17 +157,24 @@ export default function GBAEmulator() {
         setNostalgist(null);
       }
 
+      // Clear the wrapper before launching
+      const wrapper = screenWrapperRef.current;
+      if (wrapper) {
+        // Remove any existing canvas elements
+        const existingCanvases = wrapper.querySelectorAll("canvas");
+        existingCanvases.forEach((c) => c.remove());
+      }
+
       const romArrayBuffer = await file.arrayBuffer();
       const romBlob = new Blob([romArrayBuffer]);
 
-      // Use local cores for emulation
+      // Use element option - Nostalgist will create and append canvas to this element
+      // Use default CDN cores for reliability
       const instance = await Nostalgist.launch({
         core: "mgba",
         rom: romBlob,
-        canvas: canvasRef.current!,
+        element: screenWrapperRef.current!,
         runEmulatorManually: false,
-        resolveCoreJs: () => `/cores/mgba_libretro.js`,
-        resolveCoreWasm: () => `/cores/mgba_libretro.wasm`,
       });
 
       setNostalgist(instance);
@@ -255,7 +270,7 @@ export default function GBAEmulator() {
             boxShadow: "inset 0 2px 8px rgba(0,0,0,0.5)",
           }}
         >
-          {/* Inner screen area — wrapper is the sizing anchor */}
+          {/* Inner screen area — Nostalgist will create canvas here via element option */}
           <div
             ref={screenWrapperRef}
             className="relative w-full h-full overflow-hidden flex items-center justify-center"
@@ -265,19 +280,7 @@ export default function GBAEmulator() {
               boxShadow: "inset 0 2px 10px rgba(0,0,0,0.3)",
             }}
           >
-            {/* Canvas sits absolutely inside the wrapper; ResizeObserver keeps it matched */}
-            <canvas
-              ref={canvasRef}
-              style={{
-                position: "absolute",
-                top: 0,
-                left: 0,
-                width: "100%",
-                height: "100%",
-                imageRendering: "pixelated",
-                display: emulatorRunning ? "block" : "none",
-              }}
-            />
+            {/* Nostalgist injects canvas here; we style it via the useEffect observer */}
             {!emulatorRunning && (
               <button
                 onClick={handleLoadClick}
