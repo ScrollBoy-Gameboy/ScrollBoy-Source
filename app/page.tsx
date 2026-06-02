@@ -177,9 +177,9 @@ export default function GBAEmulator() {
       // Launch nostalgist with the canvas element directly
       // Uses default CDN-hosted cores for reliability
       const instance = await Nostalgist.launch({
+        element: canvas,
         core: "mgba",
         rom: romBlob,
-        canvas: canvas,
         runEmulatorManually: false,
       });
 
@@ -299,11 +299,10 @@ export default function GBAEmulator() {
 
           {/* Power indicator dot */}
           <div
-            className={`absolute top-[20px] right-[-8px] w-[6px] h-[6px] rounded-full transition-all ${
-              emulatorRunning
+            className={`absolute top-[20px] right-[-8px] w-[6px] h-[6px] rounded-full transition-all ${emulatorRunning
                 ? "bg-[#ff0000] shadow-[0_0_6px_#ff0000]"
                 : "bg-[#4a0000]"
-            }`}
+              }`}
           />
         </div>
 
@@ -326,40 +325,36 @@ export default function GBAEmulator() {
                   boxShadow: "2px 2px 4px rgba(0,0,0,0.4)",
                 }}
               />
-              
+
               {/* Up button */}
               <button
                 type="button"
-                className={`absolute top-0 left-1/2 -translate-x-1/2 w-[30px] h-[30px] border-none cursor-pointer transition-all rounded-t-md ${
-                  pressedButtons.has("UP") ? "bg-[#1a1a1a]" : "bg-transparent hover:bg-[#3a3a3a] active:bg-[#1a1a1a]"
-                }`}
+                className={`absolute top-0 left-1/2 -translate-x-1/2 w-[30px] h-[30px] border-none cursor-pointer transition-all rounded-t-md ${pressedButtons.has("UP") ? "bg-[#1a1a1a]" : "bg-transparent hover:bg-[#3a3a3a] active:bg-[#1a1a1a]"
+                  }`}
                 {...createButtonHandlers("UP")}
               />
-              
+
               {/* Down button */}
               <button
                 type="button"
-                className={`absolute bottom-0 left-1/2 -translate-x-1/2 w-[30px] h-[30px] border-none cursor-pointer transition-all rounded-b-md ${
-                  pressedButtons.has("DOWN") ? "bg-[#1a1a1a]" : "bg-transparent hover:bg-[#3a3a3a] active:bg-[#1a1a1a]"
-                }`}
+                className={`absolute bottom-0 left-1/2 -translate-x-1/2 w-[30px] h-[30px] border-none cursor-pointer transition-all rounded-b-md ${pressedButtons.has("DOWN") ? "bg-[#1a1a1a]" : "bg-transparent hover:bg-[#3a3a3a] active:bg-[#1a1a1a]"
+                  }`}
                 {...createButtonHandlers("DOWN")}
               />
-              
+
               {/* Left button */}
               <button
                 type="button"
-                className={`absolute left-0 top-1/2 -translate-y-1/2 w-[30px] h-[30px] border-none cursor-pointer transition-all rounded-l-md ${
-                  pressedButtons.has("LEFT") ? "bg-[#1a1a1a]" : "bg-transparent hover:bg-[#3a3a3a] active:bg-[#1a1a1a]"
-                }`}
+                className={`absolute left-0 top-1/2 -translate-y-1/2 w-[30px] h-[30px] border-none cursor-pointer transition-all rounded-l-md ${pressedButtons.has("LEFT") ? "bg-[#1a1a1a]" : "bg-transparent hover:bg-[#3a3a3a] active:bg-[#1a1a1a]"
+                  }`}
                 {...createButtonHandlers("LEFT")}
               />
-              
+
               {/* Right button */}
               <button
                 type="button"
-                className={`absolute right-0 top-1/2 -translate-y-1/2 w-[30px] h-[30px] border-none cursor-pointer transition-all rounded-r-md ${
-                  pressedButtons.has("RIGHT") ? "bg-[#1a1a1a]" : "bg-transparent hover:bg-[#3a3a3a] active:bg-[#1a1a1a]"
-                }`}
+                className={`absolute right-0 top-1/2 -translate-y-1/2 w-[30px] h-[30px] border-none cursor-pointer transition-all rounded-r-md ${pressedButtons.has("RIGHT") ? "bg-[#1a1a1a]" : "bg-transparent hover:bg-[#3a3a3a] active:bg-[#1a1a1a]"
+                  }`}
                 {...createButtonHandlers("RIGHT")}
               />
             </div>
@@ -371,9 +366,8 @@ export default function GBAEmulator() {
               {/* B Button (left, lower) */}
               <button
                 type="button"
-                className={`absolute left-0 bottom-0 w-[45px] h-[45px] rounded-full border-none cursor-pointer transition-all hover:brightness-90 active:brightness-75 ${
-                  pressedButtons.has("B") ? "scale-95 brightness-75" : ""
-                }`}
+                className={`absolute left-0 bottom-0 w-[45px] h-[45px] rounded-full border-none cursor-pointer transition-all hover:brightness-90 active:brightness-75 ${pressedButtons.has("B") ? "scale-95 brightness-75" : ""
+                  }`}
                 style={{
                   background: "linear-gradient(145deg, #c71585 0%, #a01060 100%)",
                   boxShadow: pressedButtons.has("B")
@@ -386,9 +380,8 @@ export default function GBAEmulator() {
               {/* A Button (right, higher) */}
               <button
                 type="button"
-                className={`absolute right-0 top-0 w-[45px] h-[45px] rounded-full border-none cursor-pointer transition-all hover:brightness-90 active:brightness-75 ${
-                  pressedButtons.has("A") ? "scale-95 brightness-75" : ""
-                }`}
+                className={`absolute right-0 top-0 w-[45px] h-[45px] rounded-full border-none cursor-pointer transition-all hover:brightness-90 active:brightness-75 ${pressedButtons.has("A") ? "scale-95 brightness-75" : ""
+                  }`}
                 style={{
                   background: "linear-gradient(145deg, #c71585 0%, #a01060 100%)",
                   boxShadow: pressedButtons.has("A")
@@ -405,9 +398,8 @@ export default function GBAEmulator() {
             <div className="flex flex-col items-center gap-2">
               <button
                 type="button"
-                className={`w-[45px] h-[12px] rounded-[6px] border-none cursor-pointer transition-all hover:brightness-90 active:brightness-75 ${
-                  pressedButtons.has("SELECT") ? "scale-95 brightness-75" : ""
-                }`}
+                className={`w-[45px] h-[12px] rounded-[6px] border-none cursor-pointer transition-all hover:brightness-90 active:brightness-75 ${pressedButtons.has("SELECT") ? "scale-95 brightness-75" : ""
+                  }`}
                 style={{
                   background: "linear-gradient(180deg, #707070 0%, #505050 100%)",
                   boxShadow: "1px 2px 3px rgba(0,0,0,0.4)",
@@ -422,9 +414,8 @@ export default function GBAEmulator() {
             <div className="flex flex-col items-center gap-2">
               <button
                 type="button"
-                className={`w-[45px] h-[12px] rounded-[6px] border-none cursor-pointer transition-all hover:brightness-90 active:brightness-75 ${
-                  pressedButtons.has("START") ? "scale-95 brightness-75" : ""
-                }`}
+                className={`w-[45px] h-[12px] rounded-[6px] border-none cursor-pointer transition-all hover:brightness-90 active:brightness-75 ${pressedButtons.has("START") ? "scale-95 brightness-75" : ""
+                  }`}
                 style={{
                   background: "linear-gradient(180deg, #707070 0%, #505050 100%)",
                   boxShadow: "1px 2px 3px rgba(0,0,0,0.4)",
