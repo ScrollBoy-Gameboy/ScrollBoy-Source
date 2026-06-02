@@ -7,7 +7,7 @@ const _geistMono = Geist_Mono({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
   title: 'MGBA Advance Emulator',
-  description: 'GBA Emulator Desktop Application built with Electron',
+  description: 'GBA Emulator Web Application',
   generator: 'v0.app',
   icons: {
     icon: [
@@ -34,8 +34,8 @@ export default function RootLayout({
   children: React.ReactNode
 }>) {
   return (
-    <html lang="en" className="bg-[#2a2a2a]">
-      <body className="font-sans antialiased bg-[#2a2a2a]">
+    <html lang="en" className="bg-black">
+      <body className="font-sans antialiased bg-black">
         {children}
       </body>
     </html>

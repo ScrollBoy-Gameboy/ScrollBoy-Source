@@ -109,26 +109,24 @@ export default function GBAEmulator() {
         setNostalgist(null);
       }
 
-      const romUrl = URL.createObjectURL(file);
+      const romArrayBuffer = await file.arrayBuffer();
+      const romBlob = new Blob([romArrayBuffer]);
 
+      // Use the bundled cores from Nostalgist CDN for compatibility
       const instance = await Nostalgist.launch({
         core: "mgba",
-        rom: romUrl,
+        rom: romBlob,
         canvas: canvasRef.current!,
         runEmulatorManually: false,
-        resolveCoreJs: (core: string) =>
-          `https://cdn.jsdelivr.net/gh/nicholasalx/pwa-nicogba/nicogba/libretro-cores/${core}_libretro.js`,
-        resolveCoreWasm: () => `/cores/mgba_libretro.wasm`,
       });
 
       setNostalgist(instance);
       setEmulatorRunning(true);
+      setStatusText("");
       setLoading(false);
-
-      URL.revokeObjectURL(romUrl);
     } catch (error) {
-      console.error("Error initializing emulator:", error);
-      setStatusText("Error loading emulator");
+      console.error("[v0] Error initializing emulator:", error);
+      setStatusText("Error loading emulator. Try again.");
       setLoading(false);
     }
   };
@@ -169,7 +167,7 @@ export default function GBAEmulator() {
   });
 
   return (
-    <div className="min-h-screen bg-[#2a2a2a] flex flex-col items-center justify-center select-none">
+    <div className="min-h-screen bg-black flex flex-col items-center justify-center select-none p-4">
       <input
         ref={fileInputRef}
         type="file"
@@ -178,271 +176,247 @@ export default function GBAEmulator() {
         className="hidden"
       />
 
-      <button
-        onClick={handleLoadClick}
-        className="absolute top-4 left-1/2 -translate-x-1/2 px-5 py-2 bg-gradient-to-b from-[#6a5a9a] to-[#5a4a8a] border-none rounded-md text-white text-xs font-bold cursor-pointer shadow-md hover:from-[#5a4a8a] hover:to-[#4a3a7a] hover:-translate-y-0.5 active:from-[#4a3a7a] active:to-[#3a2a6a] active:translate-y-0 transition-all z-50"
+      {/* Game Boy Body */}
+      <div
+        className="relative flex flex-col items-center"
+        style={{
+          width: "320px",
+          height: "520px",
+          background: "linear-gradient(180deg, #c8c8c8 0%, #d8d8d8 15%, #e8e8e8 100%)",
+          borderRadius: "12px 12px 12px 80px",
+          boxShadow: "0 8px 32px rgba(0,0,0,0.5), inset 0 2px 0 rgba(255,255,255,0.5)",
+        }}
       >
-        Load ROM
-      </button>
-
-      <div className="relative w-[850px] h-[500px]">
-        {/* Main body */}
+        {/* Top dark gray section */}
         <div
-          className="relative w-full h-full flex flex-col items-center pt-[30px]"
+          className="absolute top-0 left-0 right-0"
           style={{
-            background:
-              "linear-gradient(145deg, #5a4a8a 0%, #4a3a7a 50%, #3a2a6a 100%)",
-            borderRadius: "30px 30px 180px 180px / 30px 30px 80px 80px",
-            boxShadow:
-              "0 10px 30px rgba(0, 0, 0, 0.5), inset 0 2px 10px rgba(255, 255, 255, 0.1), inset 0 -5px 20px rgba(0, 0, 0, 0.3)",
+            height: "50px",
+            background: "linear-gradient(180deg, #a0a0a0 0%, #b8b8b8 100%)",
+            borderRadius: "12px 12px 0 0",
           }}
         >
-          {/* Shoulder L Button */}
-          <button
-            type="button"
-            className={`absolute top-[5px] left-[80px] w-[80px] h-[25px] rounded-t-md flex justify-center items-center text-[#6a6a8a] text-xs font-bold cursor-pointer transition-all border-none hover:brightness-90 active:brightness-75 ${
-              pressedButtons.has("L") ? "translate-y-0.5 brightness-75" : ""
-            }`}
-            style={{
-              background: "linear-gradient(180deg, #4a3a7a 0%, #3a2a6a 100%)",
-              boxShadow:
-                "0 -3px 6px rgba(0, 0, 0, 0.3), inset 0 2px 4px rgba(255, 255, 255, 0.1)",
-            }}
-            {...createButtonHandlers("L")}
-          >
-            L
-          </button>
+          {/* Top decorative lines */}
+          <div className="absolute top-[10px] left-[20px] right-[20px] h-[3px] bg-[#888] rounded-full" />
+          <div className="absolute top-[18px] left-[20px] right-[20px] h-[3px] bg-[#888] rounded-full" />
+        </div>
 
-          {/* Shoulder R Button */}
-          <button
-            type="button"
-            className={`absolute top-[5px] right-[80px] w-[80px] h-[25px] rounded-t-md flex justify-center items-center text-[#6a6a8a] text-xs font-bold cursor-pointer transition-all border-none hover:brightness-90 active:brightness-75 ${
-              pressedButtons.has("R") ? "translate-y-0.5 brightness-75" : ""
-            }`}
-            style={{
-              background: "linear-gradient(180deg, #4a3a7a 0%, #3a2a6a 100%)",
-              boxShadow:
-                "0 -3px 6px rgba(0, 0, 0, 0.3), inset 0 2px 4px rgba(255, 255, 255, 0.1)",
-            }}
-            {...createButtonHandlers("R")}
-          >
-            R
-          </button>
-
-          {/* Power Indicator */}
-          <div className="absolute top-5 right-[30px] flex items-center gap-2 z-10">
-            <div
-              className={`w-3 h-3 rounded-full transition-all duration-300 ${
-                emulatorRunning
-                  ? "bg-[#00ff00] shadow-[0_0_10px_#00ff00,0_0_20px_#00ff00]"
-                  : "bg-[#1a3a1a]"
-              }`}
-            />
-            <span className="text-[#1a1a3a] text-xs font-bold tracking-wider">
-              POWER
-            </span>
-          </div>
-
-          {/* Screen Bezel */}
+        {/* Screen Bezel */}
+        <div
+          className="relative mt-[60px]"
+          style={{
+            width: "240px",
+            height: "190px",
+            background: "linear-gradient(145deg, #505060 0%, #404050 50%, #303040 100%)",
+            borderRadius: "10px 10px 35px 10px",
+            padding: "15px",
+            boxShadow: "inset 0 2px 8px rgba(0,0,0,0.5)",
+          }}
+        >
+          {/* Inner screen area with green tint */}
           <div
-            className="relative w-[420px] h-[280px] rounded-[15px] p-[15px]"
+            className="relative w-full h-full overflow-hidden flex items-center justify-center"
             style={{
-              background: "linear-gradient(180deg, #2a2a4a 0%, #1a1a2a 100%)",
-              boxShadow:
-                "inset 0 3px 15px rgba(0, 0, 0, 0.8), 0 2px 5px rgba(255, 255, 255, 0.1)",
+              background: "#8bac0f",
+              borderRadius: "4px",
+              boxShadow: "inset 0 2px 10px rgba(0,0,0,0.3)",
             }}
           >
-            <div className="relative w-full h-full bg-[#1a1a1a] rounded-[5px] overflow-hidden flex justify-center items-center">
-              <canvas
-                ref={canvasRef}
-                className={`w-full h-full object-contain ${
-                  emulatorRunning ? "block" : "hidden"
-                }`}
-                style={{ imageRendering: "pixelated" }}
-              />
-              {!emulatorRunning && (
-                <div className="text-[#333] text-sm text-center">
-                  {loading ? "Loading..." : statusText}
-                </div>
-              )}
-            </div>
+            <canvas
+              ref={canvasRef}
+              className={`w-full h-full object-contain ${emulatorRunning ? "block" : "hidden"}`}
+              style={{ imageRendering: "pixelated" }}
+            />
+            {!emulatorRunning && (
+              <button
+                onClick={handleLoadClick}
+                className="text-[#306230] text-sm font-bold cursor-pointer bg-transparent border-none hover:text-[#0f380f] transition-colors"
+              >
+                {loading ? "Loading..." : statusText}
+              </button>
+            )}
           </div>
 
+          {/* Power indicator dot */}
+          <div
+            className={`absolute top-[20px] right-[-8px] w-[6px] h-[6px] rounded-full transition-all ${
+              emulatorRunning
+                ? "bg-[#ff0000] shadow-[0_0_6px_#ff0000]"
+                : "bg-[#4a0000]"
+            }`}
+          />
+        </div>
+
+        {/* Nintendo-style branding text */}
+        <div className="mt-2 text-[#666] text-[10px] font-bold tracking-[3px] italic">
+          GAME BOY
+        </div>
+
+        {/* Controls Section */}
+        <div className="relative w-full flex-1 mt-4">
           {/* D-Pad */}
-          <div className="absolute left-[40px] top-1/2 -translate-y-1/2 w-[120px] h-[120px]">
-            <div className="relative w-full h-full">
-              {/* D-Pad Center */}
-              <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-10 h-10 bg-[#3a3a5a] rounded-[5px] z-[2]" />
-
-              {/* D-Pad Up */}
+          <div className="absolute left-[35px] top-[20px]">
+            <div className="relative w-[90px] h-[90px]">
+              {/* D-Pad Cross Shape */}
+              <div
+                className="absolute inset-0"
+                style={{
+                  background: "#2a2a2a",
+                  clipPath: "polygon(33% 0%, 67% 0%, 67% 33%, 100% 33%, 100% 67%, 67% 67%, 67% 100%, 33% 100%, 33% 67%, 0% 67%, 0% 33%, 33% 33%)",
+                  boxShadow: "2px 2px 4px rgba(0,0,0,0.4)",
+                }}
+              />
+              
+              {/* Up button */}
               <button
                 type="button"
-                className={`absolute top-0 left-1/2 -translate-x-1/2 w-10 h-10 rounded-t-lg flex justify-center items-center cursor-pointer transition-all border-none hover:brightness-90 active:brightness-75 ${
-                  pressedButtons.has("UP") ? "scale-95 brightness-75" : ""
+                className={`absolute top-0 left-1/2 -translate-x-1/2 w-[30px] h-[30px] bg-transparent border-none cursor-pointer transition-all hover:brightness-90 active:brightness-75 ${
+                  pressedButtons.has("UP") ? "brightness-75" : ""
                 }`}
-                style={{
-                  background:
-                    "linear-gradient(145deg, #4a4a6a 0%, #3a3a5a 100%)",
-                }}
                 {...createButtonHandlers("UP")}
-              >
-                <div className="w-0 h-0 border-l-[8px] border-r-[8px] border-b-[8px] border-transparent border-b-[#2a2a4a]" />
-              </button>
-
-              {/* D-Pad Down */}
+              />
+              
+              {/* Down button */}
               <button
                 type="button"
-                className={`absolute bottom-0 left-1/2 -translate-x-1/2 w-10 h-10 rounded-b-lg flex justify-center items-center cursor-pointer transition-all border-none hover:brightness-90 active:brightness-75 ${
-                  pressedButtons.has("DOWN") ? "scale-95 brightness-75" : ""
+                className={`absolute bottom-0 left-1/2 -translate-x-1/2 w-[30px] h-[30px] bg-transparent border-none cursor-pointer transition-all hover:brightness-90 active:brightness-75 ${
+                  pressedButtons.has("DOWN") ? "brightness-75" : ""
                 }`}
-                style={{
-                  background:
-                    "linear-gradient(145deg, #4a4a6a 0%, #3a3a5a 100%)",
-                }}
                 {...createButtonHandlers("DOWN")}
-              >
-                <div className="w-0 h-0 border-l-[8px] border-r-[8px] border-t-[8px] border-transparent border-t-[#2a2a4a]" />
-              </button>
-
-              {/* D-Pad Left */}
+              />
+              
+              {/* Left button */}
               <button
                 type="button"
-                className={`absolute left-0 top-1/2 -translate-y-1/2 w-10 h-10 rounded-l-lg flex justify-center items-center cursor-pointer transition-all border-none hover:brightness-90 active:brightness-75 ${
-                  pressedButtons.has("LEFT") ? "scale-95 brightness-75" : ""
+                className={`absolute left-0 top-1/2 -translate-y-1/2 w-[30px] h-[30px] bg-transparent border-none cursor-pointer transition-all hover:brightness-90 active:brightness-75 ${
+                  pressedButtons.has("LEFT") ? "brightness-75" : ""
                 }`}
-                style={{
-                  background:
-                    "linear-gradient(145deg, #4a4a6a 0%, #3a3a5a 100%)",
-                }}
                 {...createButtonHandlers("LEFT")}
-              >
-                <div className="w-0 h-0 border-t-[8px] border-b-[8px] border-r-[8px] border-transparent border-r-[#2a2a4a]" />
-              </button>
-
-              {/* D-Pad Right */}
+              />
+              
+              {/* Right button */}
               <button
                 type="button"
-                className={`absolute right-0 top-1/2 -translate-y-1/2 w-10 h-10 rounded-r-lg flex justify-center items-center cursor-pointer transition-all border-none hover:brightness-90 active:brightness-75 ${
-                  pressedButtons.has("RIGHT") ? "scale-95 brightness-75" : ""
+                className={`absolute right-0 top-1/2 -translate-y-1/2 w-[30px] h-[30px] bg-transparent border-none cursor-pointer transition-all hover:brightness-90 active:brightness-75 ${
+                  pressedButtons.has("RIGHT") ? "brightness-75" : ""
                 }`}
-                style={{
-                  background:
-                    "linear-gradient(145deg, #4a4a6a 0%, #3a3a5a 100%)",
-                }}
                 {...createButtonHandlers("RIGHT")}
-              >
-                <div className="w-0 h-0 border-t-[8px] border-b-[8px] border-l-[8px] border-transparent border-l-[#2a2a4a]" />
-              </button>
-            </div>
-          </div>
-
-          {/* A/B Buttons */}
-          <div className="absolute right-[40px] top-[45%] -translate-y-1/2 flex gap-[15px]">
-            {/* B Button */}
-            <button
-              type="button"
-              className={`w-[50px] h-[50px] rounded-full flex justify-center items-center text-lg font-bold text-[#4a4a6a] cursor-pointer transition-all mt-[30px] border-none hover:brightness-90 active:brightness-75 ${
-                pressedButtons.has("B") ? "scale-95 brightness-75" : ""
-              }`}
-              style={{
-                background:
-                  "linear-gradient(145deg, #c8c8d8 0%, #a8a8b8 100%)",
-                boxShadow: pressedButtons.has("B")
-                  ? "0 2px 4px rgba(0, 0, 0, 0.3), inset 0 2px 4px rgba(0, 0, 0, 0.2)"
-                  : "0 4px 8px rgba(0, 0, 0, 0.3), inset 0 2px 4px rgba(255, 255, 255, 0.5)",
-              }}
-              {...createButtonHandlers("B")}
-            >
-              B
-            </button>
-
-            {/* A Button */}
-            <button
-              type="button"
-              className={`w-[50px] h-[50px] rounded-full flex justify-center items-center text-lg font-bold text-[#4a4a6a] cursor-pointer transition-all border-none hover:brightness-90 active:brightness-75 ${
-                pressedButtons.has("A") ? "scale-95 brightness-75" : ""
-              }`}
-              style={{
-                background:
-                  "linear-gradient(145deg, #c8c8d8 0%, #a8a8b8 100%)",
-                boxShadow: pressedButtons.has("A")
-                  ? "0 2px 4px rgba(0, 0, 0, 0.3), inset 0 2px 4px rgba(0, 0, 0, 0.2)"
-                  : "0 4px 8px rgba(0, 0, 0, 0.3), inset 0 2px 4px rgba(255, 255, 255, 0.5)",
-              }}
-              {...createButtonHandlers("A")}
-            >
-              A
-            </button>
-          </div>
-
-          {/* Start/Select Buttons */}
-          <div className="absolute left-[100px] bottom-[80px] flex flex-col gap-[10px]">
-            {/* Start */}
-            <div className="flex items-center gap-2">
-              <span className="text-[#3a3a5a] text-[10px] font-bold tracking-wider w-[50px]">
-                START
-              </span>
-              <button
-                type="button"
-                className={`w-[45px] h-[14px] rounded-[7px] cursor-pointer transition-all border-none hover:brightness-90 active:brightness-75 ${
-                  pressedButtons.has("START") ? "scale-95 brightness-75" : ""
-                }`}
-                style={{
-                  background:
-                    "linear-gradient(145deg, #7a7a9a 0%, #5a5a7a 100%)",
-                  boxShadow:
-                    "0 2px 4px rgba(0, 0, 0, 0.3), inset 0 1px 2px rgba(255, 255, 255, 0.3)",
-                }}
-                {...createButtonHandlers("START")}
               />
             </div>
+          </div>
 
-            {/* Select */}
-            <div className="flex items-center gap-2">
-              <span className="text-[#3a3a5a] text-[10px] font-bold tracking-wider w-[50px]">
-                SELECT
-              </span>
+          {/* A/B Buttons - Diagonal arrangement like real Game Boy */}
+          <div className="absolute right-[25px] top-[15px]">
+            <div className="relative w-[100px] h-[80px]">
+              {/* B Button (left, lower) */}
               <button
                 type="button"
-                className={`w-[45px] h-[14px] rounded-[7px] cursor-pointer transition-all border-none hover:brightness-90 active:brightness-75 ${
+                className={`absolute left-0 bottom-0 w-[45px] h-[45px] rounded-full border-none cursor-pointer transition-all hover:brightness-90 active:brightness-75 ${
+                  pressedButtons.has("B") ? "scale-95 brightness-75" : ""
+                }`}
+                style={{
+                  background: "linear-gradient(145deg, #c71585 0%, #a01060 100%)",
+                  boxShadow: pressedButtons.has("B")
+                    ? "1px 1px 2px rgba(0,0,0,0.4), inset 0 1px 2px rgba(0,0,0,0.3)"
+                    : "2px 3px 6px rgba(0,0,0,0.4), inset 0 2px 4px rgba(255,255,255,0.2)",
+                }}
+                {...createButtonHandlers("B")}
+              >
+                <span className="text-[10px] font-bold text-[#600030] opacity-60">B</span>
+              </button>
+
+              {/* A Button (right, higher) */}
+              <button
+                type="button"
+                className={`absolute right-0 top-0 w-[45px] h-[45px] rounded-full border-none cursor-pointer transition-all hover:brightness-90 active:brightness-75 ${
+                  pressedButtons.has("A") ? "scale-95 brightness-75" : ""
+                }`}
+                style={{
+                  background: "linear-gradient(145deg, #c71585 0%, #a01060 100%)",
+                  boxShadow: pressedButtons.has("A")
+                    ? "1px 1px 2px rgba(0,0,0,0.4), inset 0 1px 2px rgba(0,0,0,0.3)"
+                    : "2px 3px 6px rgba(0,0,0,0.4), inset 0 2px 4px rgba(255,255,255,0.2)",
+                }}
+                {...createButtonHandlers("A")}
+              >
+                <span className="text-[10px] font-bold text-[#600030] opacity-60">A</span>
+              </button>
+            </div>
+            
+            {/* Button labels */}
+            <div className="flex justify-between mt-1 px-[5px]">
+              <span className="text-[8px] font-bold text-[#4682b4]">B</span>
+              <span className="text-[8px] font-bold text-[#4682b4]">A</span>
+            </div>
+          </div>
+
+          {/* Start/Select Buttons - angled like real Game Boy */}
+          <div
+            className="absolute left-1/2 -translate-x-1/2 bottom-[70px] flex gap-[20px]"
+            style={{ transform: "translateX(-50%) rotate(-25deg)" }}
+          >
+            <div className="flex flex-col items-center gap-1">
+              <button
+                type="button"
+                className={`w-[40px] h-[10px] rounded-[5px] border-none cursor-pointer transition-all hover:brightness-90 active:brightness-75 ${
                   pressedButtons.has("SELECT") ? "scale-95 brightness-75" : ""
                 }`}
                 style={{
-                  background:
-                    "linear-gradient(145deg, #7a7a9a 0%, #5a5a7a 100%)",
-                  boxShadow:
-                    "0 2px 4px rgba(0, 0, 0, 0.3), inset 0 1px 2px rgba(255, 255, 255, 0.3)",
+                  background: "linear-gradient(180deg, #707070 0%, #505050 100%)",
+                  boxShadow: "1px 2px 3px rgba(0,0,0,0.4)",
                 }}
                 {...createButtonHandlers("SELECT")}
               />
+              <span className="text-[7px] font-bold text-[#555]" style={{ transform: "rotate(25deg)" }}>
+                SELECT
+              </span>
+            </div>
+
+            <div className="flex flex-col items-center gap-1">
+              <button
+                type="button"
+                className={`w-[40px] h-[10px] rounded-[5px] border-none cursor-pointer transition-all hover:brightness-90 active:brightness-75 ${
+                  pressedButtons.has("START") ? "scale-95 brightness-75" : ""
+                }`}
+                style={{
+                  background: "linear-gradient(180deg, #707070 0%, #505050 100%)",
+                  boxShadow: "1px 2px 3px rgba(0,0,0,0.4)",
+                }}
+                {...createButtonHandlers("START")}
+              />
+              <span className="text-[7px] font-bold text-[#555]" style={{ transform: "rotate(25deg)" }}>
+                START
+              </span>
             </div>
           </div>
 
           {/* Speaker Grille */}
-          <div className="absolute right-[80px] bottom-[70px] flex flex-col gap-[6px]">
-            {[...Array(5)].map((_, i) => (
+          <div className="absolute right-[30px] bottom-[30px] flex flex-col gap-[4px]" style={{ transform: "rotate(-25deg)" }}>
+            {[...Array(6)].map((_, i) => (
               <div
                 key={i}
-                className="w-[60px] h-[3px] bg-[#3a3a5a] rounded-sm"
+                className="w-[35px] h-[4px] rounded-full"
+                style={{
+                  background: "linear-gradient(180deg, #999 0%, #bbb 50%, #999 100%)",
+                  boxShadow: "inset 0 1px 2px rgba(0,0,0,0.3)",
+                }}
               />
             ))}
-          </div>
-
-          {/* Branding */}
-          <div className="absolute bottom-[35px] left-1/2 -translate-x-1/2 flex gap-5 items-baseline">
-            <span className="text-[#2a2a4a] text-[22px] font-bold italic tracking-wider">
-              MGBA
-            </span>
-            <span className="text-[#2a2a4a] text-[16px] font-bold tracking-[4px]">
-              ADVANCE
-            </span>
           </div>
         </div>
       </div>
 
-      <div className="fixed bottom-[10px] left-1/2 -translate-x-1/2 text-[#666] text-[11px] text-center">
-        Keyboard: Arrow Keys = D-Pad | Z = A | X = B | Enter = Start | Shift =
-        Select | A = L | S = R
+      {/* Load ROM button - outside the Game Boy */}
+      <button
+        onClick={handleLoadClick}
+        className="mt-6 px-6 py-2 bg-[#333] border border-[#555] rounded text-white text-sm font-bold cursor-pointer transition-all hover:bg-[#222] active:bg-[#111]"
+      >
+        Load ROM
+      </button>
+
+      {/* Keyboard controls hint */}
+      <div className="fixed bottom-[10px] left-1/2 -translate-x-1/2 text-[#444] text-[10px] text-center">
+        Arrow Keys = D-Pad | Z = A | X = B | Enter = Start | Shift = Select
       </div>
     </div>
   );
