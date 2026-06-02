@@ -2,6 +2,13 @@
 
 import { useEffect, useRef, useState, useCallback } from "react";
 
+// Game Boy green palette CSS filter chain:
+// 1. grayscale → strip all color to true monochrome
+// 2. sepia     → shift toward warm brown as an intermediate
+// 3. hue-rotate + saturate + brightness → land on the classic #9bbc0f green
+const GB_SCREEN_FILTER =
+  "grayscale(1) sepia(1) hue-rotate(55deg) saturate(4) brightness(0.85)";
+
 // GBA button mappings for libretro
 const GBA_BUTTONS = {
   A: 8,
@@ -33,6 +40,7 @@ const KEY_MAPPINGS: Record<string, keyof typeof GBA_BUTTONS> = {
 
 export default function GBAEmulator() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const screenWrapperRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [emulatorRunning, setEmulatorRunning] = useState(false);
   const [nostalgist, setNostalgist] = useState<any>(null);
@@ -69,6 +77,38 @@ export default function GBAEmulator() {
     },
     [nostalgist]
   );
+
+  // Lock the Nostalgist-managed canvas to our screen wrapper dimensions
+  // and apply the Game Boy green filter once the emulator is running.
+  useEffect(() => {
+    if (!emulatorRunning) return;
+
+    const canvas = canvasRef.current;
+    const wrapper = screenWrapperRef.current;
+    if (!canvas || !wrapper) return;
+
+    // Apply monochrome → green palette filter
+    canvas.style.filter = GB_SCREEN_FILTER;
+
+    // Force the canvas to fill the wrapper exactly
+    const enforceSize = () => {
+      const { width, height } = wrapper.getBoundingClientRect();
+      if (width > 0 && height > 0) {
+        canvas.style.width = `${width}px`;
+        canvas.style.height = `${height}px`;
+        canvas.style.position = "absolute";
+        canvas.style.top = "0";
+        canvas.style.left = "0";
+        canvas.style.display = "block";
+      }
+    };
+
+    enforceSize();
+    const ro = new ResizeObserver(enforceSize);
+    ro.observe(wrapper);
+
+    return () => ro.disconnect();
+  }, [emulatorRunning]);
 
   // Keyboard event handlers
   useEffect(() => {
@@ -215,8 +255,9 @@ export default function GBAEmulator() {
             boxShadow: "inset 0 2px 8px rgba(0,0,0,0.5)",
           }}
         >
-          {/* Inner screen area with green tint */}
+          {/* Inner screen area — wrapper is the sizing anchor */}
           <div
+            ref={screenWrapperRef}
             className="relative w-full h-full overflow-hidden flex items-center justify-center"
             style={{
               background: "#8bac0f",
@@ -224,15 +265,23 @@ export default function GBAEmulator() {
               boxShadow: "inset 0 2px 10px rgba(0,0,0,0.3)",
             }}
           >
+            {/* Canvas sits absolutely inside the wrapper; ResizeObserver keeps it matched */}
             <canvas
               ref={canvasRef}
-              className={`w-full h-full object-contain ${emulatorRunning ? "block" : "hidden"}`}
-              style={{ imageRendering: "pixelated" }}
+              style={{
+                position: "absolute",
+                top: 0,
+                left: 0,
+                width: "100%",
+                height: "100%",
+                imageRendering: "pixelated",
+                display: emulatorRunning ? "block" : "none",
+              }}
             />
             {!emulatorRunning && (
               <button
                 onClick={handleLoadClick}
-                className="text-[#306230] text-sm font-bold cursor-pointer bg-transparent border-none hover:text-[#0f380f] transition-colors"
+                className="relative z-10 text-[#306230] text-sm font-bold cursor-pointer bg-transparent border-none hover:text-[#0f380f] transition-colors"
               >
                 {loading ? "Loading..." : statusText}
               </button>
