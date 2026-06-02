@@ -157,23 +157,29 @@ export default function GBAEmulator() {
         setNostalgist(null);
       }
 
-      // Clear the wrapper before launching
       const wrapper = screenWrapperRef.current;
-      if (wrapper) {
-        // Remove any existing canvas elements
-        const existingCanvases = wrapper.querySelectorAll("canvas");
-        existingCanvases.forEach((c) => c.remove());
+      if (!wrapper) {
+        throw new Error("Screen wrapper not found");
       }
+
+      // Clear any existing canvas elements
+      const existingCanvases = wrapper.querySelectorAll("canvas");
+      existingCanvases.forEach((c) => c.remove());
+
+      // Create a new canvas element and append it to the wrapper
+      const canvas = document.createElement("canvas");
+      canvas.id = "emulator-canvas";
+      wrapper.appendChild(canvas);
 
       const romArrayBuffer = await file.arrayBuffer();
       const romBlob = new Blob([romArrayBuffer]);
 
-      // Use element option - Nostalgist will create and append canvas to this element
-      // Use default CDN cores for reliability
+      // Launch nostalgist with the canvas element directly
+      // Uses default CDN-hosted cores for reliability
       const instance = await Nostalgist.launch({
         core: "mgba",
         rom: romBlob,
-        element: screenWrapperRef.current!,
+        canvas: canvas,
         runEmulatorManually: false,
       });
 
