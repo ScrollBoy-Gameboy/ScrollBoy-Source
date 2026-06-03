@@ -468,152 +468,170 @@ export default function GBAEmulator() {
         </div>
         </div>{/* End Game Boy Body */}
 
-        {/* Side Power Switch — flush against the right edge of the console body */}
+        {/* Classic Game Boy–style power switch — mounted flush on the right side */}
         <div
           style={{
             alignSelf: "flex-start",
-            marginTop: "90px",
-            marginLeft: "0px",
+            marginTop: "72px",
             position: "relative",
+            display: "flex",
+            alignItems: "center",
           }}
         >
-          {/*
-            Attachment nub: a thin strip that visually merges the switch
-            housing into the console's right edge.
-          */}
+          {/* Slot cut into the console body — a recessed channel the knob slides through */}
           <div
             style={{
-              position: "absolute",
-              left: "0",
-              top: "8px",
-              bottom: "8px",
-              width: "5px",
-              background: "linear-gradient(180deg, #444 0%, #2a2a2a 50%, #444 100%)",
-              borderRadius: "0 0 0 0",
-              zIndex: 0,
+              width: "8px",
+              height: "68px",
+              background: "linear-gradient(90deg, #1a1a1a 0%, #2a2a2a 60%, #222 100%)",
+              boxShadow: "inset 2px 0 4px rgba(0,0,0,0.7)",
+              position: "relative",
+              zIndex: 1,
             }}
-          />
+          >
+            {/* Slot rail — the inset groove the knob travels along */}
+            <div
+              style={{
+                position: "absolute",
+                left: "2px",
+                right: "2px",
+                top: "6px",
+                bottom: "6px",
+                background: "#111",
+                borderRadius: "2px",
+                boxShadow: "inset 1px 1px 3px rgba(0,0,0,0.9)",
+              }}
+            />
+            {/* ON dot marker — top of slot */}
+            <div
+              style={{
+                position: "absolute",
+                top: "3px",
+                left: "50%",
+                transform: "translateX(-50%)",
+                width: "3px",
+                height: "3px",
+                borderRadius: "50%",
+                background: emulatorRunning ? "#cccccc" : "#444",
+                transition: "background 0.2s",
+              }}
+            />
+            {/* OFF dot marker — bottom of slot */}
+            <div
+              style={{
+                position: "absolute",
+                bottom: "3px",
+                left: "50%",
+                transform: "translateX(-50%)",
+                width: "3px",
+                height: "3px",
+                borderRadius: "50%",
+                background: emulatorRunning ? "#444" : "#cccccc",
+                transition: "background 0.2s",
+              }}
+            />
+          </div>
 
-          {/* Switch housing / track */}
+          {/* Switch knob — the chunky plastic toggle that protrudes from the side */}
           <div
             onClick={handleSwitchToggle}
             role="button"
             tabIndex={0}
             onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") handleSwitchToggle(); }}
-            aria-label={emulatorRunning ? "Power switch ON — click to turn off" : "Power switch OFF — click to turn on"}
-            title={emulatorRunning ? "ON — click to stop" : "OFF — click to start"}
+            aria-label={emulatorRunning ? "Power ON — click to turn off" : "Power OFF — click to turn on"}
+            title={emulatorRunning ? "ON — click to power off" : "OFF — click to power on"}
             style={{
-              position: "relative",
-              marginLeft: "4px",
-              width: "20px",
-              height: "56px",
-              background: "linear-gradient(180deg, #3a3a3a 0%, #282828 50%, #3a3a3a 100%)",
-              borderRadius: "0 6px 6px 0",
-              boxShadow: "3px 0 8px rgba(0,0,0,0.55), 1px 0 3px rgba(0,0,0,0.3), inset -1px 0 2px rgba(255,255,255,0.06), inset 1px 0 2px rgba(0,0,0,0.4)",
+              position: "absolute",
+              left: "0px",
+              /* knob sits in the upper portion of the slot when ON, lower when OFF */
+              top: emulatorRunning ? "4px" : "32px",
+              transition: "top 0.14s cubic-bezier(0.4, 0, 0.2, 1)",
+              width: "22px",
+              height: "28px",
+              zIndex: 3,
               cursor: "pointer",
-              zIndex: 1,
               outline: "none",
+              /* Knob body: classic gray plastic look */
+              background: "linear-gradient(180deg, #c8c8c8 0%, #a0a0a0 30%, #888888 65%, #707070 100%)",
+              borderRadius: "0 4px 4px 0",
+              boxShadow: [
+                "3px 1px 0 #505050",            /* right face — thickness illusion */
+                "3px 2px 4px rgba(0,0,0,0.55)", /* drop shadow */
+                "inset 0 1px 0 rgba(255,255,255,0.45)", /* top highlight */
+                "inset 0 -1px 0 rgba(0,0,0,0.25)",     /* bottom shadow */
+                "inset -1px 0 2px rgba(0,0,0,0.2)",    /* right inner shadow */
+              ].join(", "),
             }}
           >
-            {/* Recessed center groove */}
-            <div
-              style={{
-                position: "absolute",
-                left: "50%",
-                top: "5px",
-                bottom: "5px",
-                width: "4px",
-                transform: "translateX(-50%)",
-                background: "#191919",
-                borderRadius: "2px",
-                boxShadow: "inset 0 1px 4px rgba(0,0,0,0.8)",
-              }}
-            />
-
-            {/* Sliding knob — up = ON, down = OFF */}
-            <div
-              style={{
-                position: "absolute",
-                left: "50%",
-                transform: "translateX(-50%)",
-                top: emulatorRunning ? "4px" : "28px",
-                transition: "top 0.16s cubic-bezier(0.4, 0, 0.2, 1)",
-                width: "14px",
-                height: "22px",
-                background: "linear-gradient(180deg, #aaaaaa 0%, #787878 35%, #505050 100%)",
-                borderRadius: "3px",
-                boxShadow: "0 2px 5px rgba(0,0,0,0.6), inset 0 1px 0 rgba(255,255,255,0.25), inset 0 -1px 0 rgba(0,0,0,0.3)",
-                zIndex: 2,
-              }}
-            >
-              {/* Grip ridges */}
-              {[0, 1, 2].map((i) => (
+            {/* Horizontal grip ridges across the knob face */}
+            {[0, 1, 2, 3].map((i) => (
+              <div key={i}>
+                {/* shadow line */}
                 <div
-                  key={i}
                   style={{
                     position: "absolute",
-                    left: "2px",
-                    right: "2px",
+                    left: "3px",
+                    right: "4px",
                     height: "1px",
-                    top: `${6 + i * 4}px`,
-                    background: "rgba(0,0,0,0.3)",
+                    top: `${7 + i * 5}px`,
+                    background: "rgba(0,0,0,0.28)",
                     borderRadius: "1px",
                   }}
                 />
-              ))}
-              {[0, 1, 2].map((i) => (
+                {/* highlight line just below */}
                 <div
-                  key={`hi-${i}`}
                   style={{
                     position: "absolute",
-                    left: "2px",
-                    right: "2px",
+                    left: "3px",
+                    right: "4px",
                     height: "1px",
-                    top: `${7 + i * 4}px`,
-                    background: "rgba(255,255,255,0.12)",
+                    top: `${8 + i * 5}px`,
+                    background: "rgba(255,255,255,0.22)",
                     borderRadius: "1px",
                   }}
                 />
-              ))}
-            </div>
+              </div>
+            ))}
+          </div>
 
-            {/* ON label (top) */}
+          {/* ON / OFF labels to the right of the slot, classic Game Boy silkscreen style */}
+          <div
+            style={{
+              position: "absolute",
+              left: "10px",
+              top: 0,
+              bottom: 0,
+              display: "flex",
+              flexDirection: "column",
+              justifyContent: "space-between",
+              paddingTop: "2px",
+              paddingBottom: "2px",
+              pointerEvents: "none",
+              userSelect: "none",
+            }}
+          >
             <span
               style={{
-                position: "absolute",
-                top: "2px",
-                left: 0,
-                right: 0,
-                textAlign: "center",
-                fontSize: "5px",
+                fontSize: "6px",
                 fontWeight: "700",
-                letterSpacing: "0.03em",
-                color: emulatorRunning ? "rgba(220,220,220,0.85)" : "rgba(100,100,100,0.6)",
+                letterSpacing: "0.04em",
+                color: emulatorRunning ? "#b0b0b0" : "#555",
                 transition: "color 0.2s",
-                userSelect: "none",
-                pointerEvents: "none",
                 lineHeight: 1,
+                marginLeft: "11px",
               }}
             >
               ON
             </span>
-
-            {/* OFF label (bottom) */}
             <span
               style={{
-                position: "absolute",
-                bottom: "2px",
-                left: 0,
-                right: 0,
-                textAlign: "center",
-                fontSize: "5px",
+                fontSize: "6px",
                 fontWeight: "700",
-                letterSpacing: "0.03em",
-                color: emulatorRunning ? "rgba(100,100,100,0.6)" : "rgba(220,220,220,0.85)",
+                letterSpacing: "0.04em",
+                color: emulatorRunning ? "#555" : "#b0b0b0",
                 transition: "color 0.2s",
-                userSelect: "none",
-                pointerEvents: "none",
                 lineHeight: 1,
+                marginLeft: "8px",
               }}
             >
               OFF
