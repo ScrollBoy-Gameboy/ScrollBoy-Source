@@ -466,6 +466,7 @@ export default function GBAEmulator() {
             ))}
           </div>
         </div>
+        </div>{/* End Game Boy Body */}
 
         {/* Side Power Switch — flush against the right edge of the console body */}
         <div
