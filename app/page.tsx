@@ -468,71 +468,27 @@ export default function GBAEmulator() {
         </div>
         </div>{/* End Game Boy Body */}
 
-        {/* Classic Game Boy–style power switch — mounted flush on the right side */}
+        {/*
+          Power rocker switch — sized & styled to match the START button (45×12px pill)
+          rotated 90°, then clipped so only ~2/3 of its length protrudes from the edge.
+          The knob slides between two positions: up = ON, down = OFF.
+        */}
         <div
           style={{
             alignSelf: "flex-start",
-            marginTop: "72px",
+            /* vertical centre of the START button row is ~bottom-[30px] + half of 12px from bottom of the 520px body */
+            marginTop: "96px",
+            /* overflow:hidden crops the left third of the rotated pill flush to the console */
+            overflow: "hidden",
+            width: "10px",   /* visible protrusion = ~2/3 of the 12px pill height */
+            height: "45px",  /* full length of the pill (45px), now oriented vertically */
             position: "relative",
-            display: "flex",
-            alignItems: "center",
           }}
         >
-          {/* Slot cut into the console body — a recessed channel the knob slides through */}
-          <div
-            style={{
-              width: "8px",
-              height: "68px",
-              background: "linear-gradient(90deg, #1a1a1a 0%, #2a2a2a 60%, #222 100%)",
-              boxShadow: "inset 2px 0 4px rgba(0,0,0,0.7)",
-              position: "relative",
-              zIndex: 1,
-            }}
-          >
-            {/* Slot rail — the inset groove the knob travels along */}
-            <div
-              style={{
-                position: "absolute",
-                left: "2px",
-                right: "2px",
-                top: "6px",
-                bottom: "6px",
-                background: "#111",
-                borderRadius: "2px",
-                boxShadow: "inset 1px 1px 3px rgba(0,0,0,0.9)",
-              }}
-            />
-            {/* ON dot marker — top of slot */}
-            <div
-              style={{
-                position: "absolute",
-                top: "3px",
-                left: "50%",
-                transform: "translateX(-50%)",
-                width: "3px",
-                height: "3px",
-                borderRadius: "50%",
-                background: emulatorRunning ? "#cccccc" : "#444",
-                transition: "background 0.2s",
-              }}
-            />
-            {/* OFF dot marker — bottom of slot */}
-            <div
-              style={{
-                position: "absolute",
-                bottom: "3px",
-                left: "50%",
-                transform: "translateX(-50%)",
-                width: "3px",
-                height: "3px",
-                borderRadius: "50%",
-                background: emulatorRunning ? "#444" : "#cccccc",
-                transition: "background 0.2s",
-              }}
-            />
-          </div>
-
-          {/* Switch knob — the chunky plastic toggle that protrudes from the side */}
+          {/*
+            The actual rocker: a 45×12px rounded pill, rotated 90° so its long axis
+            is vertical. We shift it left by 4px so 1/3 is hidden behind overflow:hidden.
+          */}
           <div
             onClick={handleSwitchToggle}
             role="button"
@@ -542,100 +498,33 @@ export default function GBAEmulator() {
             title={emulatorRunning ? "ON — click to power off" : "OFF — click to power on"}
             style={{
               position: "absolute",
-              left: "0px",
-              /* knob sits in the upper portion of the slot when ON, lower when OFF */
-              top: emulatorRunning ? "4px" : "32px",
+              /* left edge hidden; 4px crops off ~1/3 of the 12px width */
+              left: "-4px",
+              /* slide: up position = top of range, down position = bottom */
+              top: emulatorRunning ? "0px" : "21px",
               transition: "top 0.14s cubic-bezier(0.4, 0, 0.2, 1)",
-              width: "22px",
-              height: "28px",
-              zIndex: 3,
+              /* pill dimensions matching START button proportions */
+              width: "14px",   /* pill "thickness" — matches h-[12px] of START, +2px for depth */
+              height: "24px",  /* visible knob travel length */
               cursor: "pointer",
               outline: "none",
-              /* Knob body: classic gray plastic look */
-              background: "linear-gradient(180deg, #c8c8c8 0%, #a0a0a0 30%, #888888 65%, #707070 100%)",
-              borderRadius: "0 4px 4px 0",
+              background: "linear-gradient(90deg, #b0b0b0 0%, #909090 40%, #707070 100%)",
+              borderRadius: "6px",
               boxShadow: [
-                "3px 1px 0 #505050",            /* right face — thickness illusion */
-                "3px 2px 4px rgba(0,0,0,0.55)", /* drop shadow */
-                "inset 0 1px 0 rgba(255,255,255,0.45)", /* top highlight */
-                "inset 0 -1px 0 rgba(0,0,0,0.25)",     /* bottom shadow */
-                "inset -1px 0 2px rgba(0,0,0,0.2)",    /* right inner shadow */
+                "2px 0 0 #505050",
+                "2px 1px 3px rgba(0,0,0,0.5)",
+                "inset 0 1px 0 rgba(255,255,255,0.4)",
+                "inset 0 -1px 0 rgba(0,0,0,0.2)",
               ].join(", "),
             }}
           >
-            {/* Horizontal grip ridges across the knob face */}
-            {[0, 1, 2, 3].map((i) => (
-              <div key={i}>
-                {/* shadow line */}
-                <div
-                  style={{
-                    position: "absolute",
-                    left: "3px",
-                    right: "4px",
-                    height: "1px",
-                    top: `${7 + i * 5}px`,
-                    background: "rgba(0,0,0,0.28)",
-                    borderRadius: "1px",
-                  }}
-                />
-                {/* highlight line just below */}
-                <div
-                  style={{
-                    position: "absolute",
-                    left: "3px",
-                    right: "4px",
-                    height: "1px",
-                    top: `${8 + i * 5}px`,
-                    background: "rgba(255,255,255,0.22)",
-                    borderRadius: "1px",
-                  }}
-                />
+            {/* Two grip ridges across the face, matching START button flat feel */}
+            {[6, 12].map((top) => (
+              <div key={top}>
+                <div style={{ position: "absolute", left: "2px", right: "3px", height: "1px", top: `${top}px`, background: "rgba(0,0,0,0.25)", borderRadius: "1px" }} />
+                <div style={{ position: "absolute", left: "2px", right: "3px", height: "1px", top: `${top + 1}px`, background: "rgba(255,255,255,0.18)", borderRadius: "1px" }} />
               </div>
             ))}
-          </div>
-
-          {/* ON / OFF labels to the right of the slot, classic Game Boy silkscreen style */}
-          <div
-            style={{
-              position: "absolute",
-              left: "10px",
-              top: 0,
-              bottom: 0,
-              display: "flex",
-              flexDirection: "column",
-              justifyContent: "space-between",
-              paddingTop: "2px",
-              paddingBottom: "2px",
-              pointerEvents: "none",
-              userSelect: "none",
-            }}
-          >
-            <span
-              style={{
-                fontSize: "6px",
-                fontWeight: "700",
-                letterSpacing: "0.04em",
-                color: emulatorRunning ? "#b0b0b0" : "#555",
-                transition: "color 0.2s",
-                lineHeight: 1,
-                marginLeft: "11px",
-              }}
-            >
-              ON
-            </span>
-            <span
-              style={{
-                fontSize: "6px",
-                fontWeight: "700",
-                letterSpacing: "0.04em",
-                color: emulatorRunning ? "#555" : "#b0b0b0",
-                transition: "color 0.2s",
-                lineHeight: 1,
-                marginLeft: "8px",
-              }}
-            >
-              OFF
-            </span>
           </div>
         </div>
 
