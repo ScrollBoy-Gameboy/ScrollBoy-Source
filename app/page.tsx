@@ -218,8 +218,145 @@ export default function GBAEmulator() {
     }
   });
 
+  const handleSwitchToggle = () => {
+    if (!emulatorRunning) {
+      startMorrowind("0.7.0");
+    } else {
+      if (nostalgist) {
+        nostalgist.exit();
+        setNostalgist(null);
+      }
+      setEmulatorRunning(false);
+      setStatusText("Load Morrowind 0.7.0");
+    }
+  };
+
   return (
     <div className="min-h-screen bg-black flex flex-col items-center justify-center select-none p-4">
+
+      {/* Outer wrapper: console body + side switch */}
+      <div className="relative flex items-start">
+
+      {/* Side Power Switch — mounted on the right edge of the console */}
+      <div
+        className="absolute"
+        style={{
+          right: "-28px",
+          top: "80px",
+          zIndex: 10,
+        }}
+      >
+        {/* Switch housing / track */}
+        <div
+          style={{
+            width: "18px",
+            height: "54px",
+            background: "linear-gradient(180deg, #5a0008 0%, #3d0006 50%, #5a0008 100%)",
+            borderRadius: "9px",
+            boxShadow: "2px 0 6px rgba(0,0,0,0.5), inset 0 1px 3px rgba(0,0,0,0.4), -1px 0 2px rgba(255,255,255,0.08)",
+            position: "relative",
+            cursor: "pointer",
+          }}
+          onClick={handleSwitchToggle}
+          role="button"
+          aria-label={emulatorRunning ? "Power switch — ON (click to turn off)" : "Power switch — OFF (click to turn on)"}
+          title={emulatorRunning ? "ON — click to stop" : "OFF — click to start"}
+        >
+          {/* Recessed track groove */}
+          <div
+            style={{
+              position: "absolute",
+              left: "50%",
+              top: "4px",
+              bottom: "4px",
+              width: "4px",
+              transform: "translateX(-50%)",
+              background: "linear-gradient(180deg, #1a0003 0%, #2a0005 100%)",
+              borderRadius: "2px",
+              boxShadow: "inset 0 1px 3px rgba(0,0,0,0.6)",
+            }}
+          />
+
+          {/* Thumb / knob — slides up (ON) or down (OFF) */}
+          <div
+            style={{
+              position: "absolute",
+              left: "50%",
+              transform: "translateX(-50%)",
+              top: emulatorRunning ? "3px" : "27px",
+              transition: "top 0.18s cubic-bezier(0.4, 0, 0.2, 1)",
+              width: "14px",
+              height: "22px",
+              background: emulatorRunning
+                ? "linear-gradient(180deg, #ff6666 0%, #cc2222 40%, #aa0000 100%)"
+                : "linear-gradient(180deg, #888888 0%, #555555 40%, #333333 100%)",
+              borderRadius: "4px",
+              boxShadow: emulatorRunning
+                ? "0 0 6px rgba(255,50,50,0.7), 0 2px 4px rgba(0,0,0,0.5), inset 0 1px 2px rgba(255,200,200,0.3)"
+                : "0 2px 4px rgba(0,0,0,0.5), inset 0 1px 2px rgba(255,255,255,0.15)",
+            }}
+          >
+            {/* Grip lines on the knob */}
+            {[0, 1, 2].map((i) => (
+              <div
+                key={i}
+                style={{
+                  position: "absolute",
+                  left: "2px",
+                  right: "2px",
+                  height: "1px",
+                  top: `${6 + i * 4}px`,
+                  background: emulatorRunning
+                    ? "rgba(255,200,200,0.4)"
+                    : "rgba(255,255,255,0.2)",
+                  borderRadius: "1px",
+                }}
+              />
+            ))}
+          </div>
+
+          {/* ON label */}
+          <span
+            style={{
+              position: "absolute",
+              top: "3px",
+              left: "50%",
+              transform: "translateX(-50%)",
+              fontSize: "5px",
+              fontWeight: "bold",
+              letterSpacing: "0.02em",
+              color: emulatorRunning ? "rgba(255,150,150,0.9)" : "rgba(120,60,60,0.6)",
+              transition: "color 0.2s",
+              userSelect: "none",
+              pointerEvents: "none",
+              lineHeight: 1,
+              marginTop: "1px",
+            }}
+          >
+            ON
+          </span>
+
+          {/* OFF label */}
+          <span
+            style={{
+              position: "absolute",
+              bottom: "3px",
+              left: "50%",
+              transform: "translateX(-50%)",
+              fontSize: "5px",
+              fontWeight: "bold",
+              letterSpacing: "0.02em",
+              color: emulatorRunning ? "rgba(120,60,60,0.6)" : "rgba(180,120,120,0.7)",
+              transition: "color 0.2s",
+              userSelect: "none",
+              pointerEvents: "none",
+              lineHeight: 1,
+            }}
+          >
+            OFF
+          </span>
+        </div>
+      </div>
 
       {/* Game Boy Body */}
       <div
@@ -282,12 +419,9 @@ export default function GBAEmulator() {
           >
             {/* Nostalgist injects canvas here; we style it via the useEffect observer */}
             {!emulatorRunning && (
-              <button
-                onClick={() => startMorrowind("0.7.0")}
-                className="relative z-10 text-[#cccccc] text-sm font-bold cursor-pointer bg-transparent border-none hover:text-[#eeeeee] transition-colors"
-              >
-                {loading ? "Loading..." : statusText}
-              </button>
+              <span className="relative z-10 text-[#cccccc] text-[11px] font-bold text-center px-2 pointer-events-none select-none">
+                {loading ? "Loading..." : "Flip the switch to start"}
+              </span>
             )}
           </div>
 
@@ -454,6 +588,8 @@ export default function GBAEmulator() {
           </div>
         </div>
       </div>
+
+      </div>{/* end outer wrapper */}
 
       {/* Keyboard controls hint */}
       <div className="fixed bottom-[10px] left-1/2 -translate-x-1/2 text-[#444] text-[10px] text-center">
