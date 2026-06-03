@@ -218,36 +218,38 @@ export default function GBAEmulator() {
     }
   });
 
-  const handleSwitchToggle = () => {
+  const handleSwitchToggle = async () => {
     if (!emulatorRunning) {
-      startMorrowind("0.7.0");
-    } else {
+      // If we have a paused instance, resume it; otherwise start fresh
       if (nostalgist) {
-        nostalgist.exit();
-        setNostalgist(null);
+        await nostalgist.resume();
+        setEmulatorRunning(true);
+      } else {
+        startMorrowind("0.7.0");
+      }
+    } else {
+      // Pause the emulator without destroying the canvas
+      if (nostalgist) {
+        await nostalgist.pause();
       }
       setEmulatorRunning(false);
-      setStatusText("Load Morrowind 0.7.0");
     }
   };
 
   return (
     <div className="min-h-screen bg-black flex flex-col items-center justify-center select-none p-4">
 
-      {/* Outer wrapper: console body sits inside; switch is flush on the right edge */}
-      <div className="relative flex items-start">
-
-        {/* Game Boy Body */}
-        <div
-          className="relative flex flex-col items-center"
-          style={{
-            width: "320px",
-            height: "520px",
-            background: "linear-gradient(180deg, #E60012 0%, #B3000E 15%, #8A000A 100%)",
-            borderRadius: "12px 12px 12px 80px",
-            boxShadow: "0 8px 32px rgba(0,0,0,0.5), inset 0 2px 0 rgba(255,255,255,0.2)",
-          }}
-        >
+      {/* Game Boy Body */}
+      <div
+        className="relative flex flex-col items-center"
+        style={{
+          width: "320px",
+          height: "520px",
+          background: "linear-gradient(180deg, #E60012 0%, #B3000E 15%, #8A000A 100%)",
+          borderRadius: "12px 12px 12px 80px",
+          boxShadow: "0 8px 32px rgba(0,0,0,0.5), inset 0 2px 0 rgba(255,255,255,0.2)",
+        }}
+      >
         {/* Top gray section */}
         <div
           className="absolute top-0 left-0 right-0"
@@ -272,6 +274,57 @@ export default function GBAEmulator() {
               boxShadow: "inset 0 1px 2px rgba(0,0,0,0.3)",
             }}
           />
+
+          {/*
+            Power rocker switch — positioned at top-right of console, oriented LEFT/RIGHT.
+            Cropped so ~2/3 visible (bottom portion hidden), no labels, gray only.
+            Left position = OFF, Right position = ON.
+          */}
+          <div
+            style={{
+              position: "absolute",
+              top: "-8px",
+              right: "25px",
+              overflow: "hidden",
+              width: "45px",
+              height: "10px",
+            }}
+          >
+            <div
+              onClick={handleSwitchToggle}
+              role="button"
+              tabIndex={0}
+              onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") handleSwitchToggle(); }}
+              aria-label={emulatorRunning ? "Power ON — click to turn off" : "Power OFF — click to turn on"}
+              title={emulatorRunning ? "ON — click to power off" : "OFF — click to power on"}
+              style={{
+                position: "absolute",
+                top: "-4px",
+                left: emulatorRunning ? "21px" : "0px",
+                transition: "left 0.14s cubic-bezier(0.4, 0, 0.2, 1)",
+                width: "24px",
+                height: "14px",
+                cursor: "pointer",
+                outline: "none",
+                background: "linear-gradient(180deg, #b0b0b0 0%, #909090 40%, #707070 100%)",
+                borderRadius: "6px",
+                boxShadow: [
+                  "0 2px 0 #505050",
+                  "0 3px 3px rgba(0,0,0,0.5)",
+                  "inset 0 1px 0 rgba(255,255,255,0.4)",
+                  "inset 0 -1px 0 rgba(0,0,0,0.2)",
+                ].join(", "),
+              }}
+            >
+              {/* Two grip ridges across the face */}
+              {[6, 12].map((leftPos) => (
+                <div key={leftPos}>
+                  <div style={{ position: "absolute", top: "2px", bottom: "3px", width: "1px", left: `${leftPos}px`, background: "rgba(0,0,0,0.25)", borderRadius: "1px" }} />
+                  <div style={{ position: "absolute", top: "2px", bottom: "3px", width: "1px", left: `${leftPos + 1}px`, background: "rgba(255,255,255,0.18)", borderRadius: "1px" }} />
+                </div>
+              ))}
+            </div>
+          </div>
         </div>
 
         {/* Screen Bezel */}
@@ -466,69 +519,7 @@ export default function GBAEmulator() {
             ))}
           </div>
         </div>
-        </div>{/* End Game Boy Body */}
-
-        {/*
-          Power rocker switch — sized & styled to match the START button (45×12px pill)
-          rotated 90°, then clipped so only ~2/3 of its length protrudes from the edge.
-          The knob slides between two positions: up = ON, down = OFF.
-        */}
-        <div
-          style={{
-            alignSelf: "flex-start",
-            /* vertical centre of the START button row is ~bottom-[30px] + half of 12px from bottom of the 520px body */
-            marginTop: "96px",
-            /* overflow:hidden crops the left third of the rotated pill flush to the console */
-            overflow: "hidden",
-            width: "10px",   /* visible protrusion = ~2/3 of the 12px pill height */
-            height: "45px",  /* full length of the pill (45px), now oriented vertically */
-            position: "relative",
-          }}
-        >
-          {/*
-            The actual rocker: a 45×12px rounded pill, rotated 90° so its long axis
-            is vertical. We shift it left by 4px so 1/3 is hidden behind overflow:hidden.
-          */}
-          <div
-            onClick={handleSwitchToggle}
-            role="button"
-            tabIndex={0}
-            onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") handleSwitchToggle(); }}
-            aria-label={emulatorRunning ? "Power ON — click to turn off" : "Power OFF — click to turn on"}
-            title={emulatorRunning ? "ON — click to power off" : "OFF — click to power on"}
-            style={{
-              position: "absolute",
-              /* left edge hidden; 4px crops off ~1/3 of the 12px width */
-              left: "-4px",
-              /* slide: up position = top of range, down position = bottom */
-              top: emulatorRunning ? "0px" : "21px",
-              transition: "top 0.14s cubic-bezier(0.4, 0, 0.2, 1)",
-              /* pill dimensions matching START button proportions */
-              width: "14px",   /* pill "thickness" — matches h-[12px] of START, +2px for depth */
-              height: "24px",  /* visible knob travel length */
-              cursor: "pointer",
-              outline: "none",
-              background: "linear-gradient(90deg, #b0b0b0 0%, #909090 40%, #707070 100%)",
-              borderRadius: "6px",
-              boxShadow: [
-                "2px 0 0 #505050",
-                "2px 1px 3px rgba(0,0,0,0.5)",
-                "inset 0 1px 0 rgba(255,255,255,0.4)",
-                "inset 0 -1px 0 rgba(0,0,0,0.2)",
-              ].join(", "),
-            }}
-          >
-            {/* Two grip ridges across the face, matching START button flat feel */}
-            {[6, 12].map((top) => (
-              <div key={top}>
-                <div style={{ position: "absolute", left: "2px", right: "3px", height: "1px", top: `${top}px`, background: "rgba(0,0,0,0.25)", borderRadius: "1px" }} />
-                <div style={{ position: "absolute", left: "2px", right: "3px", height: "1px", top: `${top + 1}px`, background: "rgba(255,255,255,0.18)", borderRadius: "1px" }} />
-              </div>
-            ))}
-          </div>
-        </div>
-
-      </div>{/* end outer wrapper */}
+      </div>{/* End Game Boy Body */}
 
       {/* Keyboard controls hint */}
       <div className="fixed bottom-[10px] left-1/2 -translate-x-1/2 text-[#444] text-[10px] text-center">
