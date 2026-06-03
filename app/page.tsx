@@ -234,141 +234,20 @@ export default function GBAEmulator() {
   return (
     <div className="min-h-screen bg-black flex flex-col items-center justify-center select-none p-4">
 
-      {/* Outer wrapper: console body + side switch */}
+      {/* Outer wrapper: console body sits inside; switch is flush on the right edge */}
       <div className="relative flex items-start">
 
-      {/* Side Power Switch — mounted on the right edge of the console */}
-      <div
-        className="absolute"
-        style={{
-          right: "-28px",
-          top: "80px",
-          zIndex: 10,
-        }}
-      >
-        {/* Switch housing / track */}
+        {/* Game Boy Body */}
         <div
+          className="relative flex flex-col items-center"
           style={{
-            width: "18px",
-            height: "54px",
-            background: "linear-gradient(180deg, #5a0008 0%, #3d0006 50%, #5a0008 100%)",
-            borderRadius: "9px",
-            boxShadow: "2px 0 6px rgba(0,0,0,0.5), inset 0 1px 3px rgba(0,0,0,0.4), -1px 0 2px rgba(255,255,255,0.08)",
-            position: "relative",
-            cursor: "pointer",
+            width: "320px",
+            height: "520px",
+            background: "linear-gradient(180deg, #E60012 0%, #B3000E 15%, #8A000A 100%)",
+            borderRadius: "12px 12px 12px 80px",
+            boxShadow: "0 8px 32px rgba(0,0,0,0.5), inset 0 2px 0 rgba(255,255,255,0.2)",
           }}
-          onClick={handleSwitchToggle}
-          role="button"
-          aria-label={emulatorRunning ? "Power switch — ON (click to turn off)" : "Power switch — OFF (click to turn on)"}
-          title={emulatorRunning ? "ON — click to stop" : "OFF — click to start"}
         >
-          {/* Recessed track groove */}
-          <div
-            style={{
-              position: "absolute",
-              left: "50%",
-              top: "4px",
-              bottom: "4px",
-              width: "4px",
-              transform: "translateX(-50%)",
-              background: "linear-gradient(180deg, #1a0003 0%, #2a0005 100%)",
-              borderRadius: "2px",
-              boxShadow: "inset 0 1px 3px rgba(0,0,0,0.6)",
-            }}
-          />
-
-          {/* Thumb / knob — slides up (ON) or down (OFF) */}
-          <div
-            style={{
-              position: "absolute",
-              left: "50%",
-              transform: "translateX(-50%)",
-              top: emulatorRunning ? "3px" : "27px",
-              transition: "top 0.18s cubic-bezier(0.4, 0, 0.2, 1)",
-              width: "14px",
-              height: "22px",
-              background: emulatorRunning
-                ? "linear-gradient(180deg, #ff6666 0%, #cc2222 40%, #aa0000 100%)"
-                : "linear-gradient(180deg, #888888 0%, #555555 40%, #333333 100%)",
-              borderRadius: "4px",
-              boxShadow: emulatorRunning
-                ? "0 0 6px rgba(255,50,50,0.7), 0 2px 4px rgba(0,0,0,0.5), inset 0 1px 2px rgba(255,200,200,0.3)"
-                : "0 2px 4px rgba(0,0,0,0.5), inset 0 1px 2px rgba(255,255,255,0.15)",
-            }}
-          >
-            {/* Grip lines on the knob */}
-            {[0, 1, 2].map((i) => (
-              <div
-                key={i}
-                style={{
-                  position: "absolute",
-                  left: "2px",
-                  right: "2px",
-                  height: "1px",
-                  top: `${6 + i * 4}px`,
-                  background: emulatorRunning
-                    ? "rgba(255,200,200,0.4)"
-                    : "rgba(255,255,255,0.2)",
-                  borderRadius: "1px",
-                }}
-              />
-            ))}
-          </div>
-
-          {/* ON label */}
-          <span
-            style={{
-              position: "absolute",
-              top: "3px",
-              left: "50%",
-              transform: "translateX(-50%)",
-              fontSize: "5px",
-              fontWeight: "bold",
-              letterSpacing: "0.02em",
-              color: emulatorRunning ? "rgba(255,150,150,0.9)" : "rgba(120,60,60,0.6)",
-              transition: "color 0.2s",
-              userSelect: "none",
-              pointerEvents: "none",
-              lineHeight: 1,
-              marginTop: "1px",
-            }}
-          >
-            ON
-          </span>
-
-          {/* OFF label */}
-          <span
-            style={{
-              position: "absolute",
-              bottom: "3px",
-              left: "50%",
-              transform: "translateX(-50%)",
-              fontSize: "5px",
-              fontWeight: "bold",
-              letterSpacing: "0.02em",
-              color: emulatorRunning ? "rgba(120,60,60,0.6)" : "rgba(180,120,120,0.7)",
-              transition: "color 0.2s",
-              userSelect: "none",
-              pointerEvents: "none",
-              lineHeight: 1,
-            }}
-          >
-            OFF
-          </span>
-        </div>
-      </div>
-
-      {/* Game Boy Body */}
-      <div
-        className="relative flex flex-col items-center"
-        style={{
-          width: "320px",
-          height: "520px",
-          background: "linear-gradient(180deg, #E60012 0%, #B3000E 15%, #8A000A 100%)",
-          borderRadius: "12px 12px 12px 80px",
-          boxShadow: "0 8px 32px rgba(0,0,0,0.5), inset 0 2px 0 rgba(255,255,255,0.2)",
-        }}
-      >
         {/* Top gray section */}
         <div
           className="absolute top-0 left-0 right-0"
@@ -587,7 +466,159 @@ export default function GBAEmulator() {
             ))}
           </div>
         </div>
-      </div>
+
+        {/* Side Power Switch — flush against the right edge of the console body */}
+        <div
+          style={{
+            alignSelf: "flex-start",
+            marginTop: "90px",
+            marginLeft: "0px",
+            position: "relative",
+          }}
+        >
+          {/*
+            Attachment nub: a thin strip that visually merges the switch
+            housing into the console's right edge.
+          */}
+          <div
+            style={{
+              position: "absolute",
+              left: "0",
+              top: "8px",
+              bottom: "8px",
+              width: "5px",
+              background: "linear-gradient(180deg, #444 0%, #2a2a2a 50%, #444 100%)",
+              borderRadius: "0 0 0 0",
+              zIndex: 0,
+            }}
+          />
+
+          {/* Switch housing / track */}
+          <div
+            onClick={handleSwitchToggle}
+            role="button"
+            tabIndex={0}
+            onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") handleSwitchToggle(); }}
+            aria-label={emulatorRunning ? "Power switch ON — click to turn off" : "Power switch OFF — click to turn on"}
+            title={emulatorRunning ? "ON — click to stop" : "OFF — click to start"}
+            style={{
+              position: "relative",
+              marginLeft: "4px",
+              width: "20px",
+              height: "56px",
+              background: "linear-gradient(180deg, #3a3a3a 0%, #282828 50%, #3a3a3a 100%)",
+              borderRadius: "0 6px 6px 0",
+              boxShadow: "3px 0 8px rgba(0,0,0,0.55), 1px 0 3px rgba(0,0,0,0.3), inset -1px 0 2px rgba(255,255,255,0.06), inset 1px 0 2px rgba(0,0,0,0.4)",
+              cursor: "pointer",
+              zIndex: 1,
+              outline: "none",
+            }}
+          >
+            {/* Recessed center groove */}
+            <div
+              style={{
+                position: "absolute",
+                left: "50%",
+                top: "5px",
+                bottom: "5px",
+                width: "4px",
+                transform: "translateX(-50%)",
+                background: "#191919",
+                borderRadius: "2px",
+                boxShadow: "inset 0 1px 4px rgba(0,0,0,0.8)",
+              }}
+            />
+
+            {/* Sliding knob — up = ON, down = OFF */}
+            <div
+              style={{
+                position: "absolute",
+                left: "50%",
+                transform: "translateX(-50%)",
+                top: emulatorRunning ? "4px" : "28px",
+                transition: "top 0.16s cubic-bezier(0.4, 0, 0.2, 1)",
+                width: "14px",
+                height: "22px",
+                background: "linear-gradient(180deg, #aaaaaa 0%, #787878 35%, #505050 100%)",
+                borderRadius: "3px",
+                boxShadow: "0 2px 5px rgba(0,0,0,0.6), inset 0 1px 0 rgba(255,255,255,0.25), inset 0 -1px 0 rgba(0,0,0,0.3)",
+                zIndex: 2,
+              }}
+            >
+              {/* Grip ridges */}
+              {[0, 1, 2].map((i) => (
+                <div
+                  key={i}
+                  style={{
+                    position: "absolute",
+                    left: "2px",
+                    right: "2px",
+                    height: "1px",
+                    top: `${6 + i * 4}px`,
+                    background: "rgba(0,0,0,0.3)",
+                    borderRadius: "1px",
+                  }}
+                />
+              ))}
+              {[0, 1, 2].map((i) => (
+                <div
+                  key={`hi-${i}`}
+                  style={{
+                    position: "absolute",
+                    left: "2px",
+                    right: "2px",
+                    height: "1px",
+                    top: `${7 + i * 4}px`,
+                    background: "rgba(255,255,255,0.12)",
+                    borderRadius: "1px",
+                  }}
+                />
+              ))}
+            </div>
+
+            {/* ON label (top) */}
+            <span
+              style={{
+                position: "absolute",
+                top: "2px",
+                left: 0,
+                right: 0,
+                textAlign: "center",
+                fontSize: "5px",
+                fontWeight: "700",
+                letterSpacing: "0.03em",
+                color: emulatorRunning ? "rgba(220,220,220,0.85)" : "rgba(100,100,100,0.6)",
+                transition: "color 0.2s",
+                userSelect: "none",
+                pointerEvents: "none",
+                lineHeight: 1,
+              }}
+            >
+              ON
+            </span>
+
+            {/* OFF label (bottom) */}
+            <span
+              style={{
+                position: "absolute",
+                bottom: "2px",
+                left: 0,
+                right: 0,
+                textAlign: "center",
+                fontSize: "5px",
+                fontWeight: "700",
+                letterSpacing: "0.03em",
+                color: emulatorRunning ? "rgba(100,100,100,0.6)" : "rgba(220,220,220,0.85)",
+                transition: "color 0.2s",
+                userSelect: "none",
+                pointerEvents: "none",
+                lineHeight: 1,
+              }}
+            >
+              OFF
+            </span>
+          </div>
+        </div>
 
       </div>{/* end outer wrapper */}
 
