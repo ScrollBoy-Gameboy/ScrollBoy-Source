@@ -6,9 +6,8 @@ const _geist = Geist({ subsets: ["latin"] });
 const _geistMono = Geist_Mono({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: 'MGBA Advance Emulator',
-  description: 'GBA Emulator Web Application',
-  generator: 'v0.app',
+  title: 'ScrollBoy',
+  description: 'ScrollBoy The Custom GBC by Voltaccept',
   icons: {
     icon: [
       {

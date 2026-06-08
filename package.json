@@ -1,7 +1,7 @@
 {
-  "name": "mgba-advance-emulator",
+  "name": "scrollboy",
   "version": "1.0.0",
-  "description": "GBA Emulator Desktop Application",
+  "description": "ScrollBoy The Custom GBC by Voltaccept",
   "main": "src/main.js",
   "private": true,
   "scripts": {
@@ -15,8 +15,8 @@
     "electron:build:linux": "electron-builder --linux"
   },
   "build": {
-    "appId": "com.mgba.advance",
-    "productName": "MGBA Advance",
+    "appId": "com.voltaccept.scrollboy",
+    "productName": "ScrollBoy",
     "directories": {
       "output": "dist"
     },

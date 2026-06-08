@@ -1,6 +1,11 @@
 "use client";
 
 import { useEffect, useRef, useState, useCallback } from "react";
+import {
+  persistSram,
+  loadPersistedSram,
+  uint8ArraysEqual,
+} from "@/lib/emulator-storage";
 
 // GBA button mappings for libretro
 const GBA_BUTTONS = {
@@ -31,6 +36,9 @@ const KEY_MAPPINGS: Record<string, keyof typeof GBA_BUTTONS> = {
   KeyS: "R",
 };
 
+const GAME_ID = "morrowind-0.7.0";
+const SRAM_POLL_MS = 10_000;
+
 export default function GBAEmulator() {
   const screenWrapperRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -39,6 +47,32 @@ export default function GBAEmulator() {
   const [pressedButtons, setPressedButtons] = useState<Set<string>>(new Set());
   const [loading, setLoading] = useState(false);
   const [statusText, setStatusText] = useState("Load Morrowind 0.7.0");
+
+  // Track last-known SRAM bytes so we only write when it actually changes
+  const lastSramRef = useRef<Uint8Array | null>(null);
+  const sramIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const nostalgistRef = useRef<any>(null);
+
+  // Keep a ref in sync so interval callbacks always see the latest instance
+  useEffect(() => {
+    nostalgistRef.current = nostalgist;
+  }, [nostalgist]);
+
+  // Flush current SRAM to IndexedDB
+  const flushSram = useCallback(async (instance: any) => {
+    try {
+      const blob: Blob = await instance.saveSRAM();
+      const buf = await blob.arrayBuffer();
+      const next = new Uint8Array(buf);
+      if (next.length === 0) return;
+      if (!lastSramRef.current || !uint8ArraysEqual(lastSramRef.current, next)) {
+        await persistSram(GAME_ID, next);
+        lastSramRef.current = next;
+      }
+    } catch {
+      // SRAM flush failed silently — emulator may not have initialised FS yet
+    }
+  }, []);
 
   const pressButton = useCallback(
     (buttonName: keyof typeof GBA_BUTTONS) => {
@@ -131,7 +165,25 @@ export default function GBAEmulator() {
       window.removeEventListener("keyup", handleKeyUp);
     };
   }, [pressButton, releaseButton, pressedButtons]);
-  
+
+  // Start polling SRAM every SRAM_POLL_MS while the emulator is running
+  const startSramPolling = useCallback(
+    (instance: any) => {
+      if (sramIntervalRef.current) clearInterval(sramIntervalRef.current);
+      sramIntervalRef.current = setInterval(() => {
+        flushSram(instance);
+      }, SRAM_POLL_MS);
+    },
+    [flushSram]
+  );
+
+  const stopSramPolling = useCallback(() => {
+    if (sramIntervalRef.current) {
+      clearInterval(sramIntervalRef.current);
+      sramIntervalRef.current = null;
+    }
+  }, []);
+
   const startMorrowind = async (version: string) => {
     try {
       setLoading(true);
@@ -140,9 +192,12 @@ export default function GBAEmulator() {
       const { Nostalgist } = await import("nostalgist");
 
       if (nostalgist) {
+        await flushSram(nostalgist);
         nostalgist.exit();
         setNostalgist(null);
       }
+
+      stopSramPolling();
 
       const wrapper = screenWrapperRef.current;
       if (!wrapper) {
@@ -158,12 +213,17 @@ export default function GBAEmulator() {
       canvas.id = "emulator-canvas";
       wrapper.appendChild(canvas);
 
-      // Launch nostalgist with the canvas element directly
-      // Uses default CDN-hosted cores for reliability
+      // Load any persisted SRAM before launch so we can pass it in
+      const persistedSram = await loadPersistedSram(GAME_ID);
+
+      // Launch nostalgist with the canvas element directly.
+      // Pass persisted SRAM directly as a launch option so the core loads it on boot.
       const instance = await Nostalgist.launch({
         element: canvas,
         core: "gambatte",
         rom: [version],
+        bios: ['gbc_bios.bin'],
+        ...(persistedSram ? { sram: persistedSram } : {}),
         runEmulatorManually: false,
         size: {
           width: 160,
@@ -171,17 +231,26 @@ export default function GBAEmulator() {
         },
 
         resolveRom(vers) {
-          return `/roms/morrowind-${vers}.gbc`
+          return `/roms/morrowind-${vers}.gbc`;
         },
 
         resolveCoreJs(core) {
-          return `/cores/${core}_libretro.js`
+          return `/cores/${core}_libretro.js`;
         },
 
         resolveCoreWasm(core) {
-          return `/cores/${core}_libretro.wasm`
+          return `/cores/${core}_libretro.wasm`;
+        },
+
+        resolveBios(bios) {
+          return `/bios/${bios}`
         },
       });
+
+      // Seed the last-known SRAM ref from what the core reports after boot
+      lastSramRef.current = null;
+
+      startSramPolling(instance);
 
       setNostalgist(instance);
       setEmulatorRunning(true);
@@ -189,7 +258,7 @@ export default function GBAEmulator() {
       setLoading(false);
     } catch (error) {
       console.error("[v0] Error initializing emulator:", error);
-      setStatusText("Error loading Morrowind. Try again.");
+      setStatusText("Error loading ScrollBoy Cartridge. Try again.");
       setLoading(false);
     }
   };
@@ -215,23 +284,42 @@ export default function GBAEmulator() {
     onTouchEnd: (e: React.TouchEvent) => {
       e.preventDefault();
       releaseButton(buttonName);
-    }
+    },
   });
+
+  const handleSwitchToggle = async () => {
+    if (!emulatorRunning) {
+      startMorrowind("0.7.0");
+    } else {
+      stopSramPolling();
+      if (nostalgist) {
+        await flushSram(nostalgist);
+        nostalgist.exit();
+        setNostalgist(null);
+      }
+      lastSramRef.current = null;
+      setEmulatorRunning(false);
+      setStatusText("");
+    }
+  };
 
   return (
     <div className="min-h-screen bg-black flex flex-col items-center justify-center select-none p-4">
 
-      {/* Game Boy Body */}
-      <div
-        className="relative flex flex-col items-center"
-        style={{
-          width: "320px",
-          height: "520px",
-          background: "linear-gradient(180deg, #E60012 0%, #B3000E 15%, #8A000A 100%)",
-          borderRadius: "12px 12px 12px 80px",
-          boxShadow: "0 8px 32px rgba(0,0,0,0.5), inset 0 2px 0 rgba(255,255,255,0.2)",
-        }}
-      >
+      {/* Outer wrapper: console body sits inside; switch is flush on the right edge */}
+      <div className="relative flex items-start">
+
+        {/* Game Boy Body */}
+        <div
+          className="relative flex flex-col items-center"
+          style={{
+            width: "320px",
+            height: "520px",
+            background: "linear-gradient(180deg, #E60012 0%, #B3000E 15%, #8A000A 100%)",
+            borderRadius: "12px 12px 12px 80px",
+            boxShadow: "0 8px 32px rgba(0,0,0,0.5), inset 0 2px 0 rgba(255,255,255,0.2)",
+          }}
+        >
         {/* Top gray section */}
         <div
           className="absolute top-0 left-0 right-0"
@@ -282,12 +370,9 @@ export default function GBAEmulator() {
           >
             {/* Nostalgist injects canvas here; we style it via the useEffect observer */}
             {!emulatorRunning && (
-              <button
-                onClick={() => startMorrowind("0.7.0")}
-                className="relative z-10 text-[#cccccc] text-sm font-bold cursor-pointer bg-transparent border-none hover:text-[#eeeeee] transition-colors"
-              >
-                {loading ? "Loading..." : statusText}
-              </button>
+              <span className="relative z-10 text-[#cccccc] text-[11px] font-bold text-center px-2 pointer-events-none select-none">
+                {loading ? "Loading..." : "Flip the switch to start"}
+              </span>
             )}
           </div>
 
@@ -453,7 +538,68 @@ export default function GBAEmulator() {
             ))}
           </div>
         </div>
-      </div>
+        </div>{/* End Game Boy Body */}
+
+        {/*
+          Power rocker switch — sized & styled to match the START button (45×12px pill)
+          rotated 90°, then clipped so only ~2/3 of its length protrudes from the edge.
+          The knob slides between two positions: up = ON, down = OFF.
+        */}
+        <div
+          style={{
+            alignSelf: "flex-start",
+            /* vertical centre of the START button row is ~bottom-[30px] + half of 12px from bottom of the 520px body */
+            marginTop: "96px",
+            /* overflow:hidden crops the left third of the rotated pill flush to the console */
+            overflow: "hidden",
+            width: "10px",   /* visible protrusion = ~2/3 of the 12px pill height */
+            height: "45px",  /* full length of the pill (45px), now oriented vertically */
+            position: "relative",
+          }}
+        >
+          {/*
+            The actual rocker: a 45×12px rounded pill, rotated 90° so its long axis
+            is vertical. We shift it left by 4px so 1/3 is hidden behind overflow:hidden.
+          */}
+          <div
+            onClick={handleSwitchToggle}
+            role="button"
+            tabIndex={0}
+            onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") handleSwitchToggle(); }}
+            style={{
+              position: "absolute",
+              /* left edge hidden; 4px crops off ~1/3 of the 12px width */
+              left: "-4px",
+              /* slide: up position = top of range, down position = bottom */
+              top: emulatorRunning ? "0px" : "21px",
+              transition: "top 0.14s cubic-bezier(0.4, 0, 0.2, 1)",
+              /* pill dimensions matching START button proportions */
+              width: "14px",   /* pill "thickness" — matches h-[12px] of START, +2px for depth */
+              height: "24px",  /* visible knob travel length */
+              cursor: "pointer",
+              outline: "none",
+              borderLeft: "5px solid #505050",
+              background: "linear-gradient(90deg, #b0b0b0 0%, #909090 40%, #707070 100%)",
+              borderRadius: "6px",
+              boxShadow: [
+                "2px 0 0 #505050",
+                "2px 1px 3px rgba(0,0,0,0.5)",
+                "inset 0 1px 0 rgba(255,255,255,0.4)",
+                "inset 0 -1px 0 rgba(0,0,0,0.2)",
+              ].join(", "),
+            }}
+          >
+            {/* Two grip ridges across the face, matching START button flat feel */}
+            {[6, 12].map((top) => (
+              <div key={top}>
+                <div style={{ position: "absolute", left: "2px", right: "3px", height: "1px", top: `${top}px`, background: "rgba(0,0,0,0.25)", borderRadius: "1px" }} />
+                <div style={{ position: "absolute", left: "2px", right: "3px", height: "1px", top: `${top + 1}px`, background: "rgba(255,255,255,0.18)", borderRadius: "1px" }} />
+              </div>
+            ))}
+          </div>
+        </div>
+
+      </div>{/* end outer wrapper */}
 
       {/* Keyboard controls hint */}
       <div className="fixed bottom-[10px] left-1/2 -translate-x-1/2 text-[#444] text-[10px] text-center">
