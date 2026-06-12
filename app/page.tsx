@@ -231,7 +231,7 @@ export default function GBAEmulator() {
         },
 
         resolveRom(cartridge) {
-          return `https://scrollboy.voltaccept.com/roms/${cartridge}`;
+          return `/roms/${cartridge}`;
         },
 
         resolveCoreJs(core) {
@@ -243,7 +243,7 @@ export default function GBAEmulator() {
         },
 
         resolveBios(bios) {
-          return `https://scrollboy.voltaccept.com/bios/${bios}`;
+          return `/bios/${bios}`;
         },
       });
 
