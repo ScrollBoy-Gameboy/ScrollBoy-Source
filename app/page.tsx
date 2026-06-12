@@ -36,7 +36,7 @@ const KEY_MAPPINGS: Record<string, keyof typeof GBA_BUTTONS> = {
   KeyS: "R",
 };
 
-const GAME_ID = "morrowind-0.7.0";
+const GAME_ID = "subnautica";
 const SRAM_POLL_MS = 10_000;
 
 export default function GBAEmulator() {
@@ -46,7 +46,7 @@ export default function GBAEmulator() {
   const [nostalgist, setNostalgist] = useState<any>(null);
   const [pressedButtons, setPressedButtons] = useState<Set<string>>(new Set());
   const [loading, setLoading] = useState(false);
-  const [statusText, setStatusText] = useState("Load Morrowind 0.7.0");
+  const [statusText, setStatusText] = useState("Load Scrollboy Cartridge");
 
   // Track last-known SRAM bytes so we only write when it actually changes
   const lastSramRef = useRef<Uint8Array | null>(null);
@@ -184,10 +184,10 @@ export default function GBAEmulator() {
     }
   }, []);
 
-  const startMorrowind = async (version: string) => {
+  const ScrollBoy = async (gameCartridge: string) => {
     try {
       setLoading(true);
-      setStatusText("Loading Morrowind...");
+      setStatusText("Loading ScrollBoy...");
 
       const { Nostalgist } = await import("nostalgist");
 
@@ -221,7 +221,7 @@ export default function GBAEmulator() {
       const instance = await Nostalgist.launch({
         element: canvas,
         core: "gambatte",
-        rom: [version],
+        rom: [gameCartridge],
         bios: ['gbc_bios.bin'],
         ...(persistedSram ? { sram: persistedSram } : {}),
         runEmulatorManually: false,
@@ -230,8 +230,8 @@ export default function GBAEmulator() {
           height: 144,
         },
 
-        resolveRom(vers) {
-          return `/roms/morrowind-${vers}.gbc`;
+        resolveRom(cartridge) {
+          return `/roms/${cartridge}`;
         },
 
         resolveCoreJs(core) {
@@ -289,7 +289,7 @@ export default function GBAEmulator() {
 
   const handleSwitchToggle = async () => {
     if (!emulatorRunning) {
-      startMorrowind("0.7.0");
+      ScrollBoy("subnautica.gbc");
     } else {
       stopSramPolling();
       if (nostalgist) {
@@ -565,7 +565,6 @@ export default function GBAEmulator() {
             onClick={handleSwitchToggle}
             role="button"
             tabIndex={0}
-            onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") handleSwitchToggle(); }}
             style={{
               position: "absolute",
               /* left edge hidden; 4px crops off ~1/3 of the 12px width */
