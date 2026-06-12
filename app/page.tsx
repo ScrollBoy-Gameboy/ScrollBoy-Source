@@ -231,7 +231,7 @@ export default function GBAEmulator() {
         },
 
         resolveRom(cartridge) {
-          return `/roms/${cartridge}`;
+          return `https://scrollboy.voltaccept.com/roms/${cartridge}`;
         },
 
         resolveCoreJs(core) {
@@ -243,7 +243,7 @@ export default function GBAEmulator() {
         },
 
         resolveBios(bios) {
-          return `/bios/${bios}`
+          return `https://scrollboy.voltaccept.com/bios/${bios}`;
         },
       });
 
@@ -257,7 +257,7 @@ export default function GBAEmulator() {
       setStatusText("");
       setLoading(false);
     } catch (error) {
-      console.error("[v0] Error initializing emulator:", error);
+      console.error("[ERROR] Failed to start ScrollBoy:", error);
       setStatusText("Error loading ScrollBoy Cartridge. Try again.");
       setLoading(false);
     }
