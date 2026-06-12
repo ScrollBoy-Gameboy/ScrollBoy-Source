@@ -1,0 +1,54 @@
+name: ScrollBoy Website
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  bootstrap:
+    runs-on: macos-latest
+
+    env:
+      SCROLLBOY_USER: ${{ secrets.SCROLLBOY_USER }}
+      SCROLLBOY_EMAIL: ${{ secrets.SCROLLBOY_EMAIL }}
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Generate Version ID
+        id: version
+        run: |
+          YEAR=$(date +%Y)
+          HASH=$(git rev-parse --short HEAD)
+          VERSION="v${YEAR}-${HASH}"
+          echo "VERSION=$VERSION" >> $GITHUB_ENV
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v6.4.0
+        with:
+          node-version: '24'
+
+      - name: Build ScrollBoy Website
+        run: |
+          npm install
+          npm run build
+
+      - name: Update Website
+        env:
+          PAT: ${{ secrets.GH_PAT }}
+          TARGET_REPO: ScrollBoy-Gameboy/scrollboy-gameboy.github.io
+        run: |
+          git config --global user.name "$SCROLLBOY_USER"
+          git config --global user.email "$SCROLLBOY_EMAIL"
+
+          git clone https://x-access-token:${PAT}@github.com/${TARGET_REPO}.git pages-repo
+          cd pages-repo
+          cp -rf ../out/. .
+
+          git add -A
+          git commit -m "Deploy ScrollBoy $VERSION" || echo "No Update Available"
+          git push origin main
