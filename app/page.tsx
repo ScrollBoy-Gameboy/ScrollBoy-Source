@@ -630,9 +630,48 @@ export default function GBAEmulator() {
   });
 
   return (
-    <div className="min-h-screen bg-black flex flex-col items-center justify-center select-none p-4">
+    <div className="relative min-h-screen w-full overflow-hidden flex flex-col items-center justify-center select-none p-4 bg-[#0E0E12]">
+      {/* Premium dark studio background layers */}
+      <div className="fixed inset-0 -z-20 pointer-events-none">
+        {/* Base deep charcoal with subtle blue-cold undertone */}
+        <div className="absolute inset-0 bg-gradient-to-b from-[#15161C] via-[#0C0D12] to-[#08090D]" />
+        
+        {/* Soft top-down studio lighting gradient */}
+        <div className="absolute inset-0 bg-gradient-to-b from-white/5 via-transparent to-black/40" />
+        
+        {/* Matte painted concrete texture + micro-grain */}
+        <div className="absolute inset-0 opacity-20 mix-blend-overlay" style={{
+          backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 512 512' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='concrete'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='5' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23concrete)' opacity='0.45'/%3E%3C/svg%3E")`,
+          backgroundRepeat: 'repeat',
+          backgroundSize: '280px 280px'
+        }} />
+        
+        {/* Additional fine noise for brushed metal/plaster finish */}
+        <div className="absolute inset-0 opacity-30" style={{
+          backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='fineNoise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='1.8' numOctaves='3'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23fineNoise)' opacity='0.2'/%3E%3C/svg%3E")`,
+          backgroundRepeat: 'repeat',
+          backgroundSize: '120px 120px'
+        }} />
+        
+        {/* Cool-toned subtle highlights - top edges simulating rim lighting */}
+        <div className="absolute top-0 left-1/4 right-1/4 h-40 bg-gradient-to-b from-cyan-500/5 via-transparent to-transparent rounded-full blur-3xl" />
+        <div className="absolute top-0 right-1/3 w-60 h-60 bg-blue-400/5 rounded-full blur-[100px]" />
+        
+        {/* Ambient occlusion shadows behind handheld and shelf areas */}
+        <div className="absolute top-[140px] left-1/2 -translate-x-1/2 w-[380px] h-[520px] rounded-full bg-black/60 blur-[80px]" />
+        <div className="absolute bottom-[140px] left-1/2 -translate-x-1/2 w-[700px] h-[220px] rounded-full bg-black/40 blur-[90px]" />
+        
+        {/* Soft bloom near center where screen would glow */}
+        <div className="absolute top-[180px] left-1/2 -translate-x-1/2 w-[300px] h-[200px] bg-cyan-400/5 rounded-full blur-[80px] pointer-events-none" />
+        
+        {/* Very subtle vignette to frame content */}
+        <div className="absolute inset-0 bg-radial-gradient from-transparent via-transparent to-black/50 pointer-events-none" style={{
+          background: 'radial-gradient(ellipse at 50% 45%, transparent 45%, rgba(0,0,0,0.4) 90%)'
+        }} />
+      </div>
+
       {/* Outer wrapper: emulator body + switch */}
-      <div className="relative flex items-start">
+      <div className="relative flex items-start z-10">
         {/* Ultra-realistic ScrollBoy Body */}
         <div
           className="relative flex flex-col items-center"
@@ -646,7 +685,8 @@ export default function GBAEmulator() {
               0 25px 45px -12px rgba(0,0,0,0.8),
               inset 0 1px 0 rgba(255,255,255,0.25),
               inset 0 -1px 0 rgba(0,0,0,0.2),
-              0 0 0 1px rgba(0,0,0,0.3)
+              0 0 0 1px rgba(0,0,0,0.3),
+              0 30px 40px -25px rgba(0,0,0,0.6)
             `,
             overflow: "hidden",
           }}
@@ -1084,8 +1124,8 @@ export default function GBAEmulator() {
         </div>
       </div>
 
-      {/* REALISTIC PHYSICAL SHELF - unchanged from existing high quality */}
-      <div className="mt-12 w-full max-w-5xl px-6 relative">
+      {/* REALISTIC PHYSICAL SHELF - with enhanced shadow integration */}
+      <div className="mt-12 w-full max-w-5xl px-6 relative z-10">
         <div className="relative">
           <div className="absolute -bottom-6 left-2 right-2 h-8 rounded-full bg-black/50 blur-xl -z-10" />
 
@@ -1224,7 +1264,7 @@ export default function GBAEmulator() {
         </div>
       </div>
 
-      <div className="fixed bottom-[10px] left-1/2 -translate-x-1/2 text-[#555] text-[10px] text-center backdrop-blur-sm bg-black/30 px-3 py-1 rounded-full">
+      <div className="fixed bottom-[10px] left-1/2 -translate-x-1/2 text-[#888] text-[10px] text-center backdrop-blur-sm bg-black/50 px-3 py-1 rounded-full z-20">
         Arrow Keys = D-Pad | Z = A | X = B | Enter = Start | Shift = Select
       </div>
     </div>
