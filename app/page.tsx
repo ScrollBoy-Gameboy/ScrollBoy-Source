@@ -57,6 +57,8 @@ interface Cartridge {
     pattern: "waves" | "grid" | "stripes" | "pixel";
     titleText: string;
     subText?: string;
+    titleBackground: boolean;
+
   };
   hasESRB: boolean;
 }
@@ -70,7 +72,7 @@ const CARTRIDGES: Cartridge[] = [
     gameId: "subnautica",
     type: "SCRLBOY",
     colorStyle: {
-      bodyGradient: "linear-gradient(145deg, #3EC7E8 0%, #1A7FA5  100%)",
+      bodyGradient: "linear-gradient(145deg, #3EC7E8 0%, #1A7FA5 100%)",
       labelGloss:
         "linear-gradient(135deg, rgba(255,255,255,0.2) 0%, rgba(255,255,255,0) 60%)",
       textureOverlay:
@@ -84,6 +86,32 @@ const CARTRIDGES: Cartridge[] = [
       titleText:
         "<font value='days'><color value='#F18600'>SUB</color><color value='#B4DBEE'>NAUTICA</color></font>",
       subText: "Dive Into the Unknown.",
+      titleBackground: true,
+    },
+    hasESRB: false,
+  },
+  {
+    id: "doom",
+    name: "Doom",
+    romFile: "doom.gbc",
+    gameId: "doom",
+    type: "SCRLBOY",
+    colorStyle: {
+      bodyGradient: "linear-gradient(145deg, #5D5827 0%, #36321D 100%)",
+      labelGloss:
+        "linear-gradient(135deg, rgba(255,255,255,0.2) 0%, rgba(255,255,255,0) 60%)",
+      textureOverlay:
+        "repeating-linear-gradient(45deg, rgba(0,0,0,0.02) 0px, rgba(0,0,0,0.02) 2px, rgba(0,0,0,0) 2px, rgba(0,0,0,0) 6px)",
+      borderAccent: "#5D5827",
+    },
+    artwork: {
+      primaryColor: "#6e0a0a",
+      secondaryColor: "#b51b1b",
+      pattern: "pixel",
+      titleText:
+        "<size value='50px'><color value='#1A1A1A'><font value='amazdoomleft'>Do</font><font value='amazdoomright'>oM</font></color></size>",
+      subText: "Rip and Tear.",
+      titleBackground: false,
     },
     hasESRB: false,
   },
@@ -194,7 +222,8 @@ const CartridgeItem = ({
   };
 
   const renderStyledText = (text: string): React.ReactNode => {
-    const tagRegex = /<(color|font)\s+value='([^']+)'>(.*?)<\/\1>/g;
+    // Updated regex to include 'size' tag
+    const tagRegex = /<(color|font|size)\s+value='([^']+)'>(.*?)<\/\1>/g;
     const matches = [...text.matchAll(tagRegex)];
     if (matches.length === 0) return text;
 
@@ -217,6 +246,12 @@ const CartridgeItem = ({
         injectFont(value);
         parts.push(
           <span key={index} style={{ fontFamily: `'${value}', sans-serif` }}>
+            {renderedInner}
+          </span>
+        );
+      } else if (tag === "size") {
+        parts.push(
+          <span key={index} style={{ fontSize: value }}>
             {renderedInner}
           </span>
         );
@@ -332,13 +367,15 @@ const CartridgeItem = ({
           />
           <div className="absolute inset-0 flex flex-col items-center justify-center text-center px-1">
             <div
-              className="font-black text-[15px] tracking-[-0.45px] leading-tight"
+              className="font-bold text-[15px] tracking-[-0.45px] leading-tight"
               style={{
                 color: "#fff",
-                textShadow: "0 1px 1px black",
-                background: "rgba(0,0,0,0.3)",
-                padding: "0 2px",
-                borderRadius: "2px",
+                textShadow: "0 1px 1px rgba(0,0,0,0.5)",
+                ...(cartridge.artwork.titleBackground && {
+                  background: "rgba(0,0,0,0.3)",
+                  padding: "0 2px",
+                  borderRadius: "2px",
+                })
               }}
             >
               {renderStyledText(cartridge.artwork.titleText)}
